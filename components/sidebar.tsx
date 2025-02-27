@@ -21,7 +21,7 @@ const Sidebar: React.FC = () => {
     }
   };
   return (
-    <div className={`flex flex-col bg-[#283593] text-white ${isOpen ? 'w-64' : 'w-20'} h-screen transition-all`}>
+    <div className={`flex flex-col bg-red-700 text-white ${isOpen ? 'w-64' : 'w-20'} h-screen transition-all`}>
     {/* <div className={`flex flex-col bg-[#283593] text-white ${isOpen ? 'w-64' : 'w-20'} h-screen transition-all`}> */}
       {/* Toggle Button */}
       <button

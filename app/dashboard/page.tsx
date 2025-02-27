@@ -431,7 +431,7 @@ const OrdersChart = () => {
 
   return (
         <div className="m-screen p-8 text-black bg-white">
-      <h1 className="text-3xl font-bold text-[#283593] mb-6">Dashboard Overview</h1>
+      <h1 className="text-3xl font-bold text-red-600 mb-6">Dashboard Overview</h1>
 
   
 {/*         <p className="text-center text-lg font-semibold text-gray-700">Loading data...</p> */}
@@ -439,19 +439,19 @@ const OrdersChart = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Bar Chart */}
           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-[#283593] mb-3">Total Customers</h2>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Total Customers</h2>
             {chartData ? <Bar data={chartData} /> : <p>Loading...</p>}
           </div>
 
           {/* Pie Chart */}
           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-[#283593] mb-3">Total Collectors</h2>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Total Collectors</h2>
             {pieData ? <Pie data={pieData} /> : <p>Loading...</p>}
           </div>
 
           {/* Line Chart */}
           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-[#283593] mb-3">Total Remaining Payments</h2>
+            <h2 className="text-xl font-bold text-red-600 mb-3">Total Remaining Payments</h2>
             {lineData ? <Line data={lineData} /> : <p>Loading...</p>}
           </div>
         </div>
