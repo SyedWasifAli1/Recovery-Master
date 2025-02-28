@@ -63,6 +63,12 @@ const Sidebar: React.FC = () => {
             </Link>
           </li> 
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
+            <Link href="/dashboard/transfers" className="flex items-center w-full">
+              <FiPackage size={20} className="mr-2" />
+              {isOpen && 'Collector Transfers'}
+            </Link>
+          </li>
+          <li className="p-4 hover:bg-black flex items-center cursor-pointer">
             <Link href="/dashboard/addcollector" className="flex items-center w-full">
               <FiPackage size={20} className="mr-2" />
               {isOpen && 'Add Collector'}

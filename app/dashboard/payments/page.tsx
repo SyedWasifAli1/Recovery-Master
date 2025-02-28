@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
+import withAuth from "@/app/lib/withauth";
 
 // ✅ Interface for Payment
 interface Payment {
   id: string;
   amount: number;
-  customerName:string;
+  customerName: string;
   collectorName: string;
   paymentDate: string;
 }
@@ -20,44 +21,40 @@ const Payments = () => {
   const [searchDate, setSearchDate] = useState("");
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const paymentsSnapshot = await getDocs(collection(firestore, "payments"));
+    // ✅ Query payments in descending order
+    const paymentsQuery = query(collection(firestore, "payments"), orderBy("paymentDate", "desc"));
 
-        const paymentsData: Payment[] = await Promise.all(
-          paymentsSnapshot.docs.map(async (paymentDoc) => {
-            const payment = paymentDoc.data();
+    // ✅ Real-time listener
+    const unsubscribe = onSnapshot(paymentsQuery, async (snapshot) => {
+      const paymentsData: Payment[] = await Promise.all(
+        snapshot.docs.map(async (paymentDoc) => {
+          const payment = paymentDoc.data();
 
-            let collectorName = "Unknown";
+          let collectorName = "Unknown";
+          if (payment.userId) {
+            const collectorDocRef = doc(firestore, "collectors", payment.userId);
+            const collectorDocSnap = await getDoc(collectorDocRef);
 
-            if (payment.userId) {
-              const collectorDocRef = doc(firestore, "collectors", payment.userId);
-              const collectorDocSnap = await getDoc(collectorDocRef);
-
-              if (collectorDocSnap.exists()) {
-                collectorName = collectorDocSnap.data().name || "Unknown";
-              }
+            if (collectorDocSnap.exists()) {
+              collectorName = collectorDocSnap.data().name || "Unknown";
             }
+          }
 
-            return {
-              id: paymentDoc.id,
-              amount: payment.amount,
-              customerName:payment.customerName,
-              collectorName,
-              paymentDate: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0], // YYYY-MM-DD
-            };
-          })
-        );
+          return {
+            id: paymentDoc.id,
+            amount: payment.amount,
+            customerName: payment.customerName,
+            collectorName,
+            paymentDate: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0], // YYYY-MM-DD
+          };
+        })
+      );
 
-        setPayments(paymentsData);
-      } catch (error) {
-        console.error("Error fetching payments:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setPayments(paymentsData);
+      setLoading(false);
+    });
 
-    fetchPayments();
+    return () => unsubscribe(); // ✅ Cleanup on unmount
   }, []);
 
   // ✅ Filter payments based on search criteria
@@ -123,7 +120,7 @@ const Payments = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="text-center p-4">
+                    <td colSpan={4} className="text-center p-4">
                       No payments found.
                     </td>
                   </tr>
@@ -137,4 +134,4 @@ const Payments = () => {
   );
 };
 
-export default Payments;
+export default withAuth(Payments) ;

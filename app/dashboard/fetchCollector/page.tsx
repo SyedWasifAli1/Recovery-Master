@@ -11,6 +11,7 @@ interface Collector {
   cnic: string;
   contactNumber: string;
   completeAddress: string;
+  totalpayments: number;
   createDate: string; // Date as string (formatted)
 }
 
@@ -32,6 +33,7 @@ const CollectorsListPage = () => {
             name: data.name,
             cnic: data.cnic,
             contactNumber: data.contactNumber,
+            totalpayments: data.totalPayments,
             completeAddress: data.completeAddress,
             createDate,
           };
@@ -66,6 +68,8 @@ const CollectorsListPage = () => {
                 <th className="border border-gray-700 px-4 py-2">CNIC</th>
                 <th className="border border-gray-700 px-4 py-2">Contact Number</th>
                 <th className="border border-gray-700 px-4 py-2">Complete Address</th>
+                <th className="border border-gray-700 px-4 py-2">In Wallet</th>
+
                 <th className="border border-gray-700 px-4 py-2">Created Date</th>
               </tr>
             </thead>
@@ -77,7 +81,8 @@ const CollectorsListPage = () => {
                   <td className="border border-gray-700 px-4 py-2">{collector.cnic}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.contactNumber}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.completeAddress}</td>
-                  <td className="border border-gray-700 px-4 py-2">{collector.createDate}</td>
+                  <td className="border border-gray-700 px-4 py-2"> {collector.totalpayments ?? "0"}</td>
+                  <td className="border border-gray-700 px-4 py-2">{collector.createDate }</td>
                 </tr>
               ))}
             </tbody>
