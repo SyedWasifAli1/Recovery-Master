@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
 import { collection, query, orderBy, doc, getDoc, onSnapshot } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
+import { Timestamp } from "firebase/firestore"; // Import Timestamp for type
 
 interface Transfer {
   amount: number;
@@ -14,9 +15,9 @@ interface Transfer {
 }
 
 // ✅ Firestore timestamp ko format karne ka function
-const formatFirestoreDate = (timestamp: any): string => {
+const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string => {
   if (!timestamp) return "Unknown";
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
   return new Intl.DateTimeFormat("en-CA", {
     year: "numeric",
     month: "2-digit",
@@ -49,7 +50,7 @@ const TransfersListPage = () => {
       const uniqueCollectorIds = [...new Set(transfersData.map((t) => t.collectorId))];
 
       // ✅ Collectors ke names ek hi baar fetch karo
-      let collectorsMap: Record<string, string> = {};
+      const collectorsMap: Record<string, string> = {}; // Use const here since it's not reassigned
       await Promise.all(
         uniqueCollectorIds.map(async (id) => {
           if (id !== "Unknown") {
