@@ -9,6 +9,8 @@ import withAuth from "@/app/lib/withauth";
 interface Package {
   id: string;
   name: string;
+  price: number;
+  size: string;
 }
 interface Customer {
   name: string;
@@ -18,17 +20,25 @@ interface Customer {
   area: string;
   selectedPackage: string;
 }
+interface Collector {
+  id: string;
+  name: string;
+}
 
 const AddCustomerPage = () => {
   const [packages, setPackages] = useState<Package[]>([]);
-  const   [name, setName] = useState("");
+  const [collectors, setCollectors] = useState<Collector[]>([]);
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [completeAddress, setCompleteAddress] = useState("");
   const [area, setarea] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [selectedCollector, setSelectedCollector] = useState<string | null>(null);
+  const [discount, setDiscount] = useState<number>(0);
+  const [finalPrice, setFinalPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [bulkFile, setBulkFile] = useState<File | null>(null); // State to store the uploaded file
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -36,11 +46,34 @@ const AddCustomerPage = () => {
       const packagesData = snapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name,
+        price: doc.data().price,
+        size: doc.data().size,
       }));
       setPackages(packagesData);
     };
+
+    const fetchCollectors = async () => {
+      const snapshot = await getDocs(collection(firestore, "collectors"));
+      const collectorsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().collectorId,
+      }));
+      setCollectors(collectorsData);
+    };
+
+    fetchCollectors();
     fetchPackages();
   }, []);
+
+  useEffect(() => {
+    if (selectedPackage) {
+      const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
+      if (selectedPkg) {
+        const finalPrice = selectedPkg.price - (selectedPkg.price * discount) / 100;
+        setFinalPrice(finalPrice);
+      }
+    }
+  }, [selectedPackage, discount, packages]);
 
   const handleAddCustomer = async () => {
     if (
@@ -50,6 +83,8 @@ const AddCustomerPage = () => {
       !completeAddress ||
       !area ||
       !selectedPackage
+      ||
+      !selectedCollector
     ) {
       alert("Please fill all fields.");
       return;
@@ -64,10 +99,12 @@ const AddCustomerPage = () => {
         completeAddress,
         area,
         selectedPackage,
-        createDate: new Date(), // Setting the create date to the current date
+        selectedCollector,
+        discount,
+        finalPrice,
+        createDate: new Date(),
       };
 
-      // Add customer to Firestore
       await addDoc(collection(firestore, "customers"), customerData);
 
       alert("Customer added successfully!");
@@ -77,9 +114,12 @@ const AddCustomerPage = () => {
       setCompleteAddress("");
       setarea("");
       setSelectedPackage(null);
+      setSelectedCollector(null);
+      setDiscount(0);
+      setFinalPrice(0);
     } catch (error) {
       console.error("Error adding customer:", error);
-      alert("Failed to add customer: " + error); // More specific error message
+      alert("Failed to add customer: " + error);
     } finally {
       setIsLoading(false);
     }
@@ -93,21 +133,21 @@ const AddCustomerPage = () => {
 
     setIsLoading(true);
     try {
-      // Parse the CSV file
       Papa.parse(bulkFile, {
-        header: true, // Add this line
+        header: true,
         complete: async (result) => {
-          console.log("Parsed CSV data:", result.data); // Now you should see only the customer rows
           const customers = result.data as Customer[];
 
-          // Process each customer and add to Firestore
           for (const customer of customers) {
             const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
 
             if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
               console.warn("Skipping incomplete customer data:", customer);
-              continue; // Skip incomplete rows
+              continue;
             }
+
+            const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
+            const finalPrice = selectedPkg ? selectedPkg.price - (selectedPkg.price * discount) / 100 : 0;
 
             const customerData = {
               name,
@@ -116,15 +156,16 @@ const AddCustomerPage = () => {
               completeAddress,
               area,
               selectedPackage,
-              createDate: new Date(), // Setting the create date to the current date
+              discount,
+              finalPrice,
+              createDate: new Date(),
             };
 
-            // Add each customer to Firestore
             await addDoc(collection(firestore, "customers"), customerData);
           }
 
           alert("Bulk upload successful!");
-          setBulkFile(null); // Reset the file after successful upload
+          setBulkFile(null);
         },
         error: (error) => {
           console.error("Error parsing CSV:", error);
@@ -143,7 +184,6 @@ const AddCustomerPage = () => {
     <div className="container mx-auto p-6 pt-0">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Add Customer</h1>
-        {/* Bulk Upload Section */}
         <div className="flex items-center">
           <input
             type="file"
@@ -200,16 +240,16 @@ const AddCustomerPage = () => {
 
         {/* Select Package */}
         <div className="bg-white shadow-md rounded p-4">
-          <label className="block text-gray-700 font-medium mb-2">Select Package</label>
+          <label className="block text-gray-700 font-medium mb-2">Select Package Price</label>
           <select
             value={selectedPackage || ""}
             onChange={(e) => setSelectedPackage(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="">Select Package</option>
+            <option value="">Package Price</option>
             {packages.map((pkg) => (
               <option key={pkg.id} value={pkg.id}>
-                {pkg.name}
+                {pkg.name} {pkg.size} - Rs.{pkg.price}
               </option>
             ))}
           </select>
@@ -217,6 +257,40 @@ const AddCustomerPage = () => {
 
         {/* Complete Address & area in a single row */}
         <div className="bg-white shadow-md rounded p-4 col-span-2 sm:col-span-3 lg:col-span-4 grid grid-cols-2 gap-4">
+          <div className="p-4">
+            <label className="block text-gray-700 font-medium mb-2">Select Collector</label>
+            <select
+              value={selectedCollector || ""}
+              onChange={(e) => setSelectedCollector(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Select Collector</option>
+              {collectors.map((collector) => (
+                <option key={collector.id} value={collector.id}>{collector.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="p-4 flex gap-4">
+  <div className="flex-1">
+    <label className="block text-gray-700 font-medium mb-2">Discount (%)</label>
+    <input
+      type="number"
+      placeholder="Discount"
+      value={discount}
+      onChange={(e) => setDiscount(Number(e.target.value))}
+      className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
+  </div>
+  <div className="flex-1">
+    <label className="block text-gray-700 font-medium mb-2">Final Price</label>
+    <input
+      type="text"
+      value={`Rs.${finalPrice.toFixed(2)}`}
+      disabled
+      className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
+  </div>
+</div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">Complete Address</label>
             <textarea
@@ -254,7 +328,6 @@ const AddCustomerPage = () => {
 };
 
 export default withAuth(AddCustomerPage);
-
 
 
 

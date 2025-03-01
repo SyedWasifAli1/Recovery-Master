@@ -18,7 +18,8 @@ const Payments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchCollector, setSearchCollector] = useState("");
-  const [searchDate, setSearchDate] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     // ✅ Query payments in descending order
@@ -57,12 +58,15 @@ const Payments = () => {
     return () => unsubscribe(); // ✅ Cleanup on unmount
   }, []);
 
-  // ✅ Filter payments based on search criteria
+  // ✅ Filter payments based on search criteria (Collector + Date Range)
   const filteredPayments = payments.filter((payment) => {
-    return (
-      (searchCollector === "" || payment.collectorName.toLowerCase().includes(searchCollector.toLowerCase())) &&
-      (searchDate === "" || payment.paymentDate === searchDate)
-    );
+    const isCollectorMatch =
+      searchCollector === "" || payment.collectorName.toLowerCase().includes(searchCollector.toLowerCase());
+
+    const isDateInRange =
+      (fromDate === "" || payment.paymentDate >= fromDate) && (toDate === "" || payment.paymentDate <= toDate);
+
+    return isCollectorMatch && isDateInRange;
   });
 
   // ✅ Calculate total amount of filtered payments
@@ -73,21 +77,42 @@ const Payments = () => {
       <h1 className="text-2xl font-bold text-center mb-4">All Payments</h1>
 
       {/* ✅ Filter Inputs */}
-      <div className="flex gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Search Collector"
-          className="p-2 border rounded w-1/2"
-          value={searchCollector}
-          onChange={(e) => setSearchCollector(e.target.value)}
-        />
-        <input
-          type="date"
-          className="p-2 border rounded w-1/2"
-          value={searchDate}
-          onChange={(e) => setSearchDate(e.target.value)}
-        />
-      </div>
+      <div className="grid grid-cols-3 gap-4 mb-4">
+  {/* Collector Name Search */}
+  <div className="flex flex-col">
+    <label className="text-sm font-medium mb-1">Search Collector</label>
+    <input
+      type="text"
+      placeholder="Enter Collector Name"
+      className="p-2 border rounded"
+      value={searchCollector}
+      onChange={(e) => setSearchCollector(e.target.value)}
+    />
+  </div>
+
+  {/* From Date Filter */}
+  <div className="flex flex-col">
+    <label className="text-sm font-medium mb-1">From Date</label>
+    <input
+      type="date"
+      className="p-2 border rounded"
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+    />
+  </div>
+
+  {/* To Date Filter */}
+  <div className="flex flex-col">
+    <label className="text-sm font-medium mb-1">To Date</label>
+    <input
+      type="date"
+      className="p-2 border rounded"
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+    />
+  </div>
+</div>
+
 
       {/* ✅ Total Amount Display */}
       <div className="text-lg font-semibold mb-2">
@@ -134,4 +159,4 @@ const Payments = () => {
   );
 };
 
-export default withAuth(Payments) ;
+export default withAuth(Payments);

@@ -36,6 +36,7 @@ const AddCollectorPage = () => {
         contactNumber,
         completeAddress,
         email,
+        password :password,
         role:"collector",
         uid: user.uid,
         createDate: new Date(),
