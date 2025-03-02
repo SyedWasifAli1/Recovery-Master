@@ -32,6 +32,8 @@ const AddCustomerPage = () => {
   const [username, setUsername] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [completeAddress, setCompleteAddress] = useState("");
+  const [city, setcity] = useState("");
+  const [category, setcategory] = useState("");
   const [area, setarea] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [selectedCollector, setSelectedCollector] = useState<string | null>(null);
@@ -82,6 +84,8 @@ const AddCustomerPage = () => {
       !contactNumber ||
       !completeAddress ||
       !area ||
+      !city ||
+      !category ||
       !selectedPackage
       ||
       !selectedCollector
@@ -98,6 +102,8 @@ const AddCustomerPage = () => {
         contactNumber,
         completeAddress,
         area,
+        city,
+        category,
         selectedPackage,
         selectedCollector,
         discount,
@@ -216,10 +222,10 @@ const AddCustomerPage = () => {
 
         {/* Username */}
         <div className="bg-white shadow-md rounded p-4">
-          <label className="block text-gray-700 font-medium mb-2">Username</label>
+          <label className="block text-gray-700 font-medium mb-2">Business Name</label>
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Business Name"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -310,6 +316,29 @@ const AddCustomerPage = () => {
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Category</label>
+            <input
+              type="text"
+              placeholder="Category"
+              value={category}
+              onChange={(e) => setcategory(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">City</label>
+            <input
+              type="text"
+              placeholder="City"
+              value={city}
+              onChange={(e) => setcity(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          
+
         </div>
 
         {/* Add Customer Button */}

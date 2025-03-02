@@ -59,7 +59,7 @@ const Sidebar: React.FC = () => {
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
             <Link href="/dashboard/listofcustomers" className="flex items-center w-full">
               <FiUsers size={20} className="mr-2" />
-              {isOpen && ' List of Users'}
+              {isOpen && ' List of Customers'}
             </Link>
           </li> 
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
