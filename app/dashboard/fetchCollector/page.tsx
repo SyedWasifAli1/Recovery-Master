@@ -4,9 +4,10 @@ import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
 import { collection, getDocs } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
+import crypto from "crypto";
 
 interface Collector {
-  collectorId: string;
+  collectorId: number;
   name: string;
   email: string;
   password: string;
@@ -30,7 +31,7 @@ const CollectorsListPage = () => {
         const collectorsData: Collector[] = snapshot.docs.map((doc) => {
           const data = doc.data();
           return {
-            collectorId: data.collectorId,
+            collectorId: generateNumericHash(doc.id),
             name: data.name || "N/A",
             email: data.email || "N/A",
             password: data.password || "N/A",
@@ -51,6 +52,12 @@ const CollectorsListPage = () => {
         setLoading(false);
       }
     };
+    // ✅ Function to Convert Firestore Document ID to a Numeric Hash
+const generateNumericHash = (id:string) => {
+  const hash = crypto.createHash("sha256").update(id).digest("hex");
+  return parseInt(hash.substring(0,10), 16) % 1000000; // ✅ Same modulo logic as Dart
+};
+
 
     fetchCollectors();
   }, []);

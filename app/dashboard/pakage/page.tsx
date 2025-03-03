@@ -10,14 +10,14 @@ interface Package {
   id: string;
   name: string;
   price: number;
-  size: string;
+  // size: string;
   createDate: Date;
 }
 
 const AddPackagePage: React.FC = () => {
   const [packageName, setPackageName] = useState<string>("");
   const [packagePrice, setPackagePrice] = useState<number | "">("");
-  const [packageSize, setPackageSize] = useState<string>("MB");
+  // const [packageSize, setPackageSize] = useState<string>("MB");
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
@@ -53,7 +53,7 @@ const AddPackagePage: React.FC = () => {
       const packageData: Omit<Package, "id"> = {
         name: packageName,
         price: Number(packagePrice),
-        size: packageSize,
+        // size: packageSize,
         createDate: new Date(),
       };
 
@@ -99,7 +99,7 @@ const AddPackagePage: React.FC = () => {
   const handleEditPackage = (pkg: Package) => {
     setPackageName(pkg.name);
     setPackagePrice(pkg.price);
-    setPackageSize(pkg.size);
+    // setPackageSize(pkg.size);
     setEditingPackage(pkg);
     setIsModalOpen(true);
   };
@@ -107,7 +107,7 @@ const AddPackagePage: React.FC = () => {
   const resetForm = () => {
     setPackageName("");
     setPackagePrice("");
-    setPackageSize("MB");
+    // setPackageSize("MB");
     setEditingPackage(null);
   };
 
@@ -115,11 +115,17 @@ const AddPackagePage: React.FC = () => {
     <div className="container mx-auto p-6 bg-white shadow-lg rounded-lg">
       <h1 className="text-3xl font-bold text-center mb-8 text-indigo-600">Manage Packages</h1>
       <button
-        onClick={() => setIsModalOpen(true)}
-        className="w-80 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-      >
-        Add New Package
-      </button>
+  onClick={() => {
+    setEditingPackage(null); // Reset editing state
+    setPackageName(""); // Reset package name
+    setPackagePrice(""); // Reset package price
+    setIsModalOpen(true);
+  }}
+  className="w-80 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+>
+  Add New Package
+</button>
+
       <h2 className="text-xl font-semibold text-center mt-6 mb-4">Existing Packages</h2>
       {isLoading ? (
         <p className="text-center">Loading...</p>
@@ -128,7 +134,7 @@ const AddPackagePage: React.FC = () => {
           {packages.map((pkg) => (
             <li key={pkg.id} className="flex justify-between items-center p-4 bg-gray-100 rounded-lg">
               <span className="text-lg">
-                {pkg.name} - {pkg.size} - Rs.{pkg.price}
+                {pkg.name} - Rs.{pkg.price}
               </span>
               <div className="space-x-2">
                 <button
@@ -167,7 +173,7 @@ const AddPackagePage: React.FC = () => {
               onChange={(e) => setPackagePrice(Number(e.target.value))}
               className="w-full p-3 border-2 border-indigo-500 rounded-md"
             />
-            <select
+            {/* <select
               value={packageSize}
               onChange={(e) => setPackageSize(e.target.value)}
               className="w-full p-3 border-2 border-indigo-500 rounded-md"
@@ -175,7 +181,7 @@ const AddPackagePage: React.FC = () => {
               <option value="MB">MB</option>
               <option value="GB">GB</option>
               <option value="Mbps">Mbps</option>
-            </select>
+            </select> */}
             <button
               onClick={handleAddOrUpdatePackage}
               disabled={isLoading}

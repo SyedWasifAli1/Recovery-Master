@@ -51,17 +51,18 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
-            <Link href="/dashboard/payments" className="flex items-center w-full">
-              <FiPackage size={20} className="mr-2" />
-              {isOpen && 'Payments'}
-            </Link>
-          </li>
-          <li className="p-4 hover:bg-black flex items-center cursor-pointer">
             <Link href="/dashboard/listofcustomers" className="flex items-center w-full">
               <FiUsers size={20} className="mr-2" />
               {isOpen && ' List of Customers'}
             </Link>
           </li> 
+          <li className="p-4 hover:bg-black flex items-center cursor-pointer">
+            <Link href="/dashboard/payments" className="flex items-center w-full">
+              <FiPackage size={20} className="mr-2" />
+              {isOpen && 'Payments'}
+            </Link>
+          </li>
+
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
             <Link href="/dashboard/transfers" className="flex items-center w-full">
               <FiPackage size={20} className="mr-2" />
@@ -82,8 +83,8 @@ const Sidebar: React.FC = () => {
           </li>                           
           <li className="p-4 hover:bg-black flex items-center cursor-pointer">
             <Link href="/dashboard/pakage" className="flex items-center w-full">
-              <FiUsers size={20} className="mr-2" />
-              {isOpen && 'Internet Package'}
+              <FiPackage size={20} className="mr-2" />
+              {isOpen && 'Package'}
             </Link>
           </li>                           
         </ul>

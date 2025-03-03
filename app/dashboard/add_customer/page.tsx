@@ -109,6 +109,8 @@ const AddCustomerPage = () => {
         discount,
         finalPrice,
         createDate: new Date(),
+        lastpay: new Date(),
+        
       };
 
       await addDoc(collection(firestore, "customers"), customerData);

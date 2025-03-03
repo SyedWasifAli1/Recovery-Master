@@ -7,7 +7,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import withAuth from "@/app/lib/withauth";
 
 const AddCollectorPage = () => {
-  const [collectorId, setCollectorId] = useState("");
+  // const [collectorId, setCollectorId] = useState("");
   const [name, setName] = useState("");
   const [cnic, setCnic] = useState("");
   const [contactNumber, setContactNumber] = useState("");
@@ -17,7 +17,7 @@ const AddCollectorPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddCollector = async () => {
-    if (!collectorId || !name || !cnic || !contactNumber || !completeAddress || !email || !password) {
+    if ( !name || !cnic || !contactNumber || !completeAddress || !email || !password) {
       alert("Please fill all fields.");
       return;
     }
@@ -30,7 +30,7 @@ const AddCollectorPage = () => {
       
       // Prepare collector data
       const collectorData = {
-        collectorId,
+        // collectorId,
         name,
         cnic,
         contactNumber,
@@ -46,7 +46,7 @@ const AddCollectorPage = () => {
       await setDoc(doc(collection(firestore, "collectors"), user.uid), collectorData);
 
       alert("Collector added successfully!");
-      setCollectorId("");
+      // setCollectorId("");
       setName("");
       setCnic("");
       setContactNumber("");
@@ -66,29 +66,27 @@ const AddCollectorPage = () => {
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Add Collector</h1>
 
       <div className="bg-white shadow-lg rounded-lg p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* <div>
             <label className="block text-gray-700 font-semibold mb-2">Collector ID</label>
             <input type="text" placeholder="Collector ID" value={collectorId} onChange={(e) => setCollectorId(e.target.value)} className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Name</label>
             <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-gray-700 font-semibold mb-2">CNIC</label>
             <input type="text" placeholder="CNIC" value={cnic} onChange={(e) => setCnic(e.target.value)} className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
-
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Contact Number</label>
             <input type="text" placeholder="Contact Number" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </div>
         </div>
+
+       
 
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Complete Address</label>

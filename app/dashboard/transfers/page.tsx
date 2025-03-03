@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
 import { collection, query, orderBy, doc, getDoc, onSnapshot } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
-import { Timestamp } from "firebase/firestore"; // Import Timestamp for type
+import { Timestamp } from "firebase/firestore";
+import * as XLSX from "xlsx";
 
 interface Transfer {
   amount: number;
@@ -14,7 +15,6 @@ interface Transfer {
   collector_name?: string;
 }
 
-// ✅ Firestore timestamp ko format karne ka function
 const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string => {
   if (!timestamp) return "Unknown";
   const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
@@ -33,11 +33,13 @@ const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string =>
 const TransfersListPage = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchCollector, setSearchCollector] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     const transfersQuery = query(collection(firestore, "transfers"), orderBy("transfer_date", "desc"));
 
-    // ✅ Realtime updates using `onSnapshot`
     const unsubscribe = onSnapshot(transfersQuery, async (snapshot) => {
       let transfersData: Transfer[] = snapshot.docs.map((doc) => ({
         amount: doc.data().amount ?? 0,
@@ -46,11 +48,8 @@ const TransfersListPage = () => {
         collectorId: doc.data().collectorId ?? "Unknown",
       }));
 
-      // ✅ Unique collectorIds collect karo taake baar baar query na ho
       const uniqueCollectorIds = [...new Set(transfersData.map((t) => t.collectorId))];
-
-      // ✅ Collectors ke names ek hi baar fetch karo
-      const collectorsMap: Record<string, string> = {}; // Use const here since it's not reassigned
+      const collectorsMap: Record<string, string> = {};
       await Promise.all(
         uniqueCollectorIds.map(async (id) => {
           if (id !== "Unknown") {
@@ -63,7 +62,6 @@ const TransfersListPage = () => {
         })
       );
 
-      // ✅ Transfers data mein collectors ke names inject karo
       transfersData = transfersData.map((transfer) => ({
         ...transfer,
         collector_name: collectorsMap[transfer.collectorId] ?? "Unknown",
@@ -73,34 +71,82 @@ const TransfersListPage = () => {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // ✅ Unsubscribe on unmount
+    return () => unsubscribe();
   }, []);
+
+  const filteredTransfers = transfers.filter((transfer) => {
+    const isCollectorMatch =
+      searchCollector === "" || transfer.collector_name?.toLowerCase().includes(searchCollector.toLowerCase());
+    const isDateInRange =
+      (fromDate === "" || transfer.transfer_date >= fromDate) && (toDate === "" || transfer.transfer_date <= toDate);
+    return isCollectorMatch && isDateInRange;
+  });
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredTransfers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transfers");
+    XLSX.writeFile(workbook, "Transfers.xlsx");
+  };
 
   if (loading) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">All Transfers (Live Updates)</h1>
-      {transfers.length === 0 ? (
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Search Collector</label>
+          <input
+            type="text"
+            placeholder="Enter Collector Name"
+            className="p-2 border rounded"
+            value={searchCollector}
+            onChange={(e) => setSearchCollector(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">From Date</label>
+          <input
+            type="date"
+            className="p-2 border rounded"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">To Date</label>
+          <input
+            type="date"
+            className="p-2 border rounded"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+          />
+        </div>
+      </div>
+      <button onClick={exportToExcel} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+        Convert to Excel
+      </button>
+      {filteredTransfers.length === 0 ? (
         <p>No transfers found.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
+        <div className="overflow-x-auto border border-gray-300 rounded-lg max-h-[250px] overflow-y-auto">
+          <table className="table-auto w-full border-collapse">
             <thead>
-              <tr className="bg-gray-200 text-left font-semibold">
-                <th className="border border-gray-700 px-4 py-2">Amount</th>
-                <th className="border border-gray-700 px-4 py-2">Recipient</th>
-                <th className="border border-gray-700 px-4 py-2">Collector Name</th>
-                <th className="border border-gray-700 px-4 py-2">Transfer Date</th>
+              <tr className="bg-gray-500 text-white">
+                <th className="p-3 border">Amount</th>
+                <th className="p-3 border">Recipient</th>
+                <th className="p-3 border">Collector Name</th>
+                <th className="p-3 border">Transfer Date</th>
               </tr>
             </thead>
             <tbody>
-              {transfers.map((transfer, index) => (
-                <tr key={index} className="border-b border-gray-400">
-                  <td className="border border-gray-700 px-4 py-2">{transfer.amount}</td>
-                  <td className="border border-gray-700 px-4 py-2">{transfer.recipient_name}</td>
-                  <td className="border border-gray-700 px-4 py-2">{transfer.collector_name}</td>
-                  <td className="border border-gray-700 px-4 py-2">{transfer.transfer_date}</td>
+              {filteredTransfers.map((transfer, index) => (
+                <tr key={index} className="bg-gray-100 border">
+                  <td className="p-3 border">{transfer.amount}</td>
+                  <td className="p-3 border">{transfer.recipient_name}</td>
+                  <td className="p-3 border">{transfer.collector_name}</td>
+                  <td className="p-3 border">{transfer.transfer_date}</td>
                 </tr>
               ))}
             </tbody>

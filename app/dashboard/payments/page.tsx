@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { firestore } from "../../lib/firebase-config";
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
+import * as XLSX from "xlsx";
 
 // ✅ Interface for Payment
 interface Payment {
@@ -72,52 +73,65 @@ const Payments = () => {
   // ✅ Calculate total amount of filtered payments
   const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
+  // ✅ Convert to Excel Function
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredPayments);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+
+    XLSX.writeFile(workbook, "Payments.xlsx");
+  };
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-center mb-4">All Payments</h1>
 
       {/* ✅ Filter Inputs */}
       <div className="grid grid-cols-3 gap-4 mb-4">
-  {/* Collector Name Search */}
-  <div className="flex flex-col">
-    <label className="text-sm font-medium mb-1">Search Collector</label>
-    <input
-      type="text"
-      placeholder="Enter Collector Name"
-      className="p-2 border rounded"
-      value={searchCollector}
-      onChange={(e) => setSearchCollector(e.target.value)}
-    />
-  </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Search Collector</label>
+          <input
+            type="text"
+            placeholder="Enter Collector Name"
+            className="p-2 border rounded"
+            value={searchCollector}
+            onChange={(e) => setSearchCollector(e.target.value)}
+          />
+        </div>
 
-  {/* From Date Filter */}
-  <div className="flex flex-col">
-    <label className="text-sm font-medium mb-1">From Date</label>
-    <input
-      type="date"
-      className="p-2 border rounded"
-      value={fromDate}
-      onChange={(e) => setFromDate(e.target.value)}
-    />
-  </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">From Date</label>
+          <input
+            type="date"
+            className="p-2 border rounded"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+        </div>
 
-  {/* To Date Filter */}
-  <div className="flex flex-col">
-    <label className="text-sm font-medium mb-1">To Date</label>
-    <input
-      type="date"
-      className="p-2 border rounded"
-      value={toDate}
-      onChange={(e) => setToDate(e.target.value)}
-    />
-  </div>
-</div>
-
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">To Date</label>
+          <input
+            type="date"
+            className="p-2 border rounded"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+          />
+        </div>
+      </div>
 
       {/* ✅ Total Amount Display */}
       <div className="text-lg font-semibold mb-2">
         Total Amount: <span className="text-blue-600">PKR {totalAmount.toLocaleString()}</span>
       </div>
+
+      {/* ✅ Convert to Excel Button */}
+      <button
+        onClick={exportToExcel}
+        className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+      >
+        Convert to Excel
+      </button>
 
       {loading ? (
         <p className="text-center">Loading...</p>
