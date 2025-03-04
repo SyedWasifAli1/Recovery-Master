@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, Timestamp } from "firebase/firestore";
 import { firestore } from "../../lib/firebase-config";
 import withAuth from "@/app/lib/withauth";
 
@@ -18,25 +18,52 @@ interface Customer {
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
 
-  const fetchCustomers = async () => {
+
+  const formatFirestoreDate = (timestamp: Timestamp | string | undefined): string => {
+    if (!timestamp) return "Unknown";
+  
+    let date: Date;
+  
+    if (timestamp instanceof Timestamp) {
+      date = timestamp.toDate(); // Firestore Timestamp ko Date me convert karein
+    } else if (typeof timestamp === "string") {
+      date = new Date(timestamp); // Agar string format me ho to Date me convert karein
+    } else {
+      return "Unknown"; // Agar koi aur format ho to default return karein
+    }
+  
+    return new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Karachi",
+    }).format(date);
+  };
+  
+  const fetchCustomers = async (): Promise<void> => {
     try {
       const customerSnapshot = await getDocs(collection(firestore, "customers"));
       const customersData: Customer[] = customerSnapshot.docs.map((doc) => {
-        const data = doc.data() as Omit<Customer, "customerId">;
-        const createDate = data.createDate
-          ? new Date(data.createDate).toLocaleDateString("en-CA")
-          : "Unknown";
+        const data = doc.data() as Omit<Customer, "customerId"> & { createDate?: Timestamp | string };
+  
         return {
           customerId: doc.id,
           ...data,
-          createDate,
+          createDate: formatFirestoreDate(data.createDate),
         };
       });
+  
       setCustomers(customersData);
     } catch (error) {
       console.error("Error fetching customers:", error);
     }
   };
+  
+  
 
   useEffect(() => {
     fetchCustomers();

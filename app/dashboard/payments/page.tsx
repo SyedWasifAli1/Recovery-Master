@@ -130,7 +130,7 @@ const Payments = () => {
         onClick={exportToExcel}
         className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
       >
-        Convert to Excel
+        Download
       </button>
 
       {loading ? (

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config"; // Adjust the path
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc,  } from "firebase/firestore";
 import Papa from "papaparse"; // Import PapaParse
 import withAuth from "@/app/lib/withauth";
-
+import * as XLSX from "xlsx";
 interface Package {
   id: string;
   name: string;
@@ -18,8 +18,16 @@ interface Customer {
   contactNumber: string;
   completeAddress: string;
   area: string;
+  city: string;
+  category: string;
   selectedPackage: string;
+  selectedCollector: string;
+  discount: number;
+  finalPrice: number;
+  createDate: Date;
+  lastpay: Date;
 }
+
 interface Collector {
   id: string;
   name: string;
@@ -58,7 +66,7 @@ const AddCustomerPage = () => {
       const snapshot = await getDocs(collection(firestore, "collectors"));
       const collectorsData = snapshot.docs.map((doc) => ({
         id: doc.id,
-        name: doc.data().collectorId,
+        name: doc.data().name,
       }));
       setCollectors(collectorsData);
     };
@@ -133,60 +141,176 @@ const AddCustomerPage = () => {
     }
   };
 
-  const handleBulkUpload = async () => {
-    if (!bulkFile) {
-      alert("Please select a CSV file to upload.");
-      return;
-    }
+//   const handleBulkUpload = async () => {
+//     if (!bulkFile) {
+//         alert("Please select a CSV file to upload.");
+//         return;
+//     }
 
-    setIsLoading(true);
-    try {
-      Papa.parse(bulkFile, {
-        header: true,
-        complete: async (result) => {
-          const customers = result.data as Customer[];
+//     setIsLoading(true);
 
-          for (const customer of customers) {
-            const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
+//     try {
+//         Papa.parse(bulkFile, {
+//             header: true,
+//             skipEmptyLines: true, // ✅ Empty rows ignore
+//             complete: async (result) => {
+//                 console.log("Parsed CSV Data:", result.data); // ✅ Debugging
 
-            if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
-              console.warn("Skipping incomplete customer data:", customer);
-              continue;
-            }
+//                 const customers = result.data as Customer[];
+//                 const customerPromises = customers.map(async (customer) => {
+//                     const { 
+//                         name, username, contactNumber, completeAddress, 
+//                         area, city, category, selectedPackage, selectedCollector 
+//                     } = customer;
 
-            const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
-            const finalPrice = selectedPkg ? selectedPkg.price - (selectedPkg.price * discount) / 100 : 0;
+//                     // ✅ Required Fields Check
+//                     if (!name || !username || !contactNumber || !completeAddress || 
+//                         !area || !city || !category || !selectedPackage || !selectedCollector) {
+//                         console.warn("Skipping incomplete customer data:", customer);
+//                         return null;
+//                     }
 
-            const customerData = {
-              name,
-              username,
-              contactNumber,
-              completeAddress,
-              area,
-              selectedPackage,
-              discount,
-              finalPrice,
-              createDate: new Date(),
-            };
+//                     // ✅ Package Lookup
+//                     const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
+//                     const finalPrice = selectedPkg ? selectedPkg.price - (selectedPkg.price * discount) / 100 : 0;
 
-            await addDoc(collection(firestore, "customers"), customerData);
+//                     // ✅ selectedCollector Resolve from Firestore
+//                     const selectedCollectorRef = doc(firestore, "collectors", selectedCollector);
+//                     const selectedCollectorDoc = await getDoc(selectedCollectorRef);
+
+//                     if (!selectedCollectorDoc.exists()) {
+//                         console.warn("Collector not found:", selectedCollector);
+//                         return null;
+//                     }
+
+//                     // ✅ Prepare Customer Data
+//                     const customerData = {
+//                         name,
+//                         username,
+//                         contactNumber,
+//                         completeAddress,
+//                         area,
+//                         city,
+//                         category,
+//                         selectedPackage,
+//                         selectedCollector: selectedCollectorDoc.id, // ✅ Correct Firestore ID
+//                         discount,
+//                         finalPrice,
+//                         createDate: new Date(),
+//                         lastpay: new Date(),
+//                     };
+
+//                     return addDoc(collection(firestore, "customers"), customerData);
+//                 });
+
+//                 // ✅ Bulk Firestore Insert
+//                 await Promise.all(customerPromises);
+//                 alert("Bulk upload successful!");
+//                 setBulkFile(null);
+//             },
+//             error: (error) => {
+//                 console.error("Error parsing CSV:", error);
+//                 alert("Failed to upload CSV. Please check the file format.");
+//             },
+//         });
+//     } catch (error) {
+//         console.error("Error during bulk upload:", error);
+//         alert("Failed to upload customers: " + error);
+//     } finally {
+//         setIsLoading(false);
+//     }
+// };
+const handleBulkUpload = async () => {
+  if (!bulkFile) {
+    alert("Please select a CSV file to upload.");
+    return;
+  }
+
+  setIsLoading(true);
+  try {
+    // Parse the CSV file
+    Papa.parse(bulkFile, {
+      header: true, // Add this line
+      complete: async (result) => {
+        console.log("Parsed CSV data:", result.data); // Now you should see only the customer rows
+        const customers = result.data as Customer[];
+
+        // Process each customer and add to Firestore
+        for (const customer of customers) {
+          const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
+
+          if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
+            console.warn("Skipping incomplete customer data:", customer);
+            continue; // Skip incomplete rows
           }
 
-          alert("Bulk upload successful!");
-          setBulkFile(null);
-        },
-        error: (error) => {
-          console.error("Error parsing CSV:", error);
-          alert("Failed to upload CSV. Please check the file format.");
-        },
-      });
-    } catch (error) {
-      console.error("Error during bulk upload:", error);
-      alert("Failed to upload customers: " + error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+          const customerData = {
+            name,
+            username,
+            contactNumber,
+            completeAddress,
+            area,
+            selectedPackage,
+            createDate: new Date(), // Setting the create date to the current date
+          };
+
+          // Add each customer to Firestore
+          await addDoc(collection(firestore, "customers"), customerData);
+        }
+
+        alert("Bulk upload successful!");
+        setBulkFile(null); // Reset the file after successful upload
+      },
+      error: (error) => {
+        console.error("Error parsing CSV:", error);
+        alert("Failed to upload CSV. Please check the file format.");
+      },
+    });
+  } catch (error) {
+    console.error("Error during bulk upload:", error);
+    alert("Failed to upload customers: " + error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const handleDownloadFormat = () => {
+  // Define headers same as Customer interface
+  const headers = [
+    ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount", "Final Price", "Create Date", "Last Pay"]
+  ];
+
+  // Empty data row for format
+  const emptyRow = [{
+    name: "",
+    username: "",
+    contactNumber: "",
+    completeAddress: "",
+    area: "",
+    city: "",
+    category: "",
+    selectedPackage: "",
+    selectedCollector: "",
+    discount: "",
+    finalPrice: "",
+    createDate: "",
+    lastpay: ""
+  }];
+
+  // Convert data to worksheet
+  const worksheet = XLSX.utils.json_to_sheet(emptyRow, { header: Object.keys(emptyRow[0]) });
+
+  // Set header row manually
+  XLSX.utils.sheet_add_aoa(worksheet, headers, { origin: "A1" });
+
+  // Create workbook and append worksheet
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
+
+  // Write and trigger download
+  XLSX.writeFile(workbook, "Customer_Format.xlsx");
+};
+
 
   return (
     <div className="container mx-auto p-6 pt-0">
@@ -199,6 +323,8 @@ const AddCustomerPage = () => {
             onChange={(e) => setBulkFile(e.target.files ? e.target.files[0] : null)}
             className="w-50 p-2 border rounded-lg bg-gray-100 focus:outline-none mr-4"
           />
+          <button onClick={handleDownloadFormat}>Download Excel Format</button>
+
           <button
             onClick={handleBulkUpload}
             disabled={isLoading || !bulkFile}

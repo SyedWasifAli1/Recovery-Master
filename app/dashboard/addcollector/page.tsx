@@ -5,6 +5,8 @@ import { firestore, auth } from "../../lib/firebase-config"; // Adjust the path
 import { collection, doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import withAuth from "@/app/lib/withauth";
+import crypto from "crypto";
+
 
 const AddCollectorPage = () => {
   // const [collectorId, setCollectorId] = useState("");
@@ -27,7 +29,7 @@ const AddCollectorPage = () => {
       // Register user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+    const  codenumber =generateNumericHash(user.uid);
       // Prepare collector data
       const collectorData = {
         // collectorId,
@@ -38,7 +40,7 @@ const AddCollectorPage = () => {
         email,
         password :password,
         role:"collector",
-        uid: user.uid,
+        uid:codenumber,
         createDate: new Date(),
       };
 
@@ -60,7 +62,10 @@ const AddCollectorPage = () => {
       setIsLoading(false);
     }
   };
-
+const generateNumericHash = (id:string) => {
+  const hash = crypto.createHash("sha256").update(id).digest("hex");
+  return parseInt(hash.substring(0,10), 16) % 1000000; // ✅ Same modulo logic as Dart
+};
   return (
     <div className="container mx-auto p-6 bg-gray-50">
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Add Collector</h1>
