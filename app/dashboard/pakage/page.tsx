@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc,  updateDoc, doc } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
 
 // Interface for package data
