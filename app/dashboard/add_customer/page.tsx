@@ -94,16 +94,22 @@ const AddCustomerPage = () => {
       !area ||
       !city ||
       !category ||
-      !selectedPackage
-      ||
+      !selectedPackage ||
       !selectedCollector
     ) {
       alert("Please fill all fields.");
       return;
     }
-
+  
     setIsLoading(true);
     try {
+      // Get the current date
+      const currentDate = new Date();
+  
+      // Calculate the date one month before the current date
+      const lastPayDate = new Date(currentDate);
+      lastPayDate.setMonth(lastPayDate.getMonth() - 1);
+  
       const customerData = {
         name,
         username,
@@ -116,13 +122,12 @@ const AddCustomerPage = () => {
         selectedCollector,
         discount,
         finalPrice,
-        createDate: new Date(),
-        lastpay: new Date(),
-        
+        createDate: currentDate, // Current date
+        lastpay: lastPayDate, // One month before the current date
       };
-
+  
       await addDoc(collection(firestore, "customers"), customerData);
-
+  
       alert("Customer added successfully!");
       setName("");
       setUsername("");
@@ -140,7 +145,6 @@ const AddCustomerPage = () => {
       setIsLoading(false);
     }
   };
-
 //   const handleBulkUpload = async () => {
 //     if (!bulkFile) {
 //         alert("Please select a CSV file to upload.");

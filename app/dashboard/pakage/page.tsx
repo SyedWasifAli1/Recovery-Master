@@ -80,21 +80,21 @@ const AddPackagePage: React.FC = () => {
     }
   };
 
-  const handleDeletePackage = async (packageId: string) => {
-    if (!window.confirm("Are you sure you want to delete this package?")) return;
+  // const handleDeletePackage = async (packageId: string) => {
+  //   if (!window.confirm("Are you sure you want to delete this package?")) return;
 
-    setIsLoading(true);
-    try {
-      await deleteDoc(doc(firestore, "packages", packageId));
-      setPackages((prevPackages) => prevPackages.filter((pkg) => pkg.id !== packageId));
-      alert("Package deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting package:", error);
-      alert("Failed to delete package: " + error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //   setIsLoading(true);
+  //   try {
+  //     await deleteDoc(doc(firestore, "packages", packageId));
+  //     setPackages((prevPackages) => prevPackages.filter((pkg) => pkg.id !== packageId));
+  //     alert("Package deleted successfully!");
+  //   } catch (error) {
+  //     console.error("Error deleting package:", error);
+  //     alert("Failed to delete package: " + error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleEditPackage = (pkg: Package) => {
     setPackageName(pkg.name);
@@ -144,7 +144,8 @@ const AddPackagePage: React.FC = () => {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDeletePackage(pkg.id)}
+                  // onClick={() => handleDeletePackage(pkg.id)}
+                  // onClick={}
                   className="bg-red-500 text-white px-4 py-1 rounded-full"
                 >
                   Delete

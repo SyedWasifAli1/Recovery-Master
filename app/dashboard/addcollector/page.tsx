@@ -40,6 +40,7 @@ const AddCollectorPage = () => {
         email,
         password :password,
         role:"collector",
+        totalPayments:0,
         uid:codenumber,
         createDate: new Date(),
       };
