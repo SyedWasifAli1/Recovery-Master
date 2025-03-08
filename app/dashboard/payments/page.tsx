@@ -94,10 +94,10 @@ const Payments = () => {
       {/* ✅ Filter Inputs */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Search Collector</label>
+          <label className="text-sm font-medium mb-1">Search Collector/Customer</label>
           <input
             type="text"
-            placeholder="Enter Collector Name"
+            placeholder="Enter Collector/Customer Name"
             className="p-2 border rounded"
             value={searchCollector}
             onChange={(e) => setSearchCollector(e.target.value)}

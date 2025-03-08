@@ -7,7 +7,8 @@ import withAuth from "@/app/lib/withauth";
 import { Timestamp } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import Image from "next/image";
-import { FiImage } from 'react-icons/fi'; 
+import { FiImage } from 'react-icons/fi';
+
 interface Transfer {
   amount: number;
   recipient_name: string;
@@ -40,6 +41,8 @@ const TransfersListPage = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [paymentType, setPaymentType] = useState<"all" | "internal" | "external">("all"); // Add payment type filter
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   useEffect(() => {
     const transfersQuery = query(collection(firestore, "transfers"), orderBy("transfer_date", "desc"));
@@ -97,6 +100,18 @@ const TransfersListPage = () => {
     XLSX.writeFile(workbook, "Transfers.xlsx");
   };
 
+  // Function to open modal with selected image
+  const openModal = (imageBytes: Uint8Array) => {
+    const imageUrl = `data:image/png;base64,${imageBytes}`;
+    setSelectedImage(imageUrl);
+    setIsModalOpen(true);
+  };
+
+  // Function to close modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedImage(null);
+  };
 
   if (loading) return <div>Loading...</div>;
 
@@ -173,26 +188,50 @@ const TransfersListPage = () => {
                   <td className="p-3 border">{transfer.payment_type}</td>
                   <td className="p-3 border">
                     {transfer.image_bytes ? (
-                      // <img
-                      //   src={`data:image/png;base64,${transfer.image_bytes}`} // Convert bytes to image URL
-                      //   alt="Transfer Receipt"
-                      //   className="w-16 h-16 object-cover rounded"
-                      // />
-                      <Image
-                      src={`data:image/png;base64,${transfer.image_bytes}`}
-                      alt={`Thumbnail of ${transfer.payment_type}`}
-                      width={64}
-                      height={64}
-                      className="object-cover rounded"
-                    />
+                      <div
+                        onClick={() => openModal(transfer.image_bytes!)}
+                        className="cursor-pointer"
+                      >
+                        <Image
+                         src={`data:image/png;base64,${transfer.image_bytes}`}
+                          alt={`Thumbnail of ${transfer.payment_type}`}
+                          width={64}
+                          height={64}
+                          className="object-cover rounded"
+                        />
+                      </div>
                     ) : (
-                      <FiImage className="w-16 h-16 text-gray-400" /> 
+                      <FiImage className="w-16 h-16 text-gray-400" />
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal for displaying larger image */}
+      {isModalOpen && selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-3xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Image Preview</h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                &times;
+              </button>
+            </div>
+            <Image
+              src={selectedImage}
+              alt="Enlarged Receipt"
+              width={800}
+              height={800}
+              className="object-contain rounded"
+            />
+          </div>
         </div>
       )}
     </div>
