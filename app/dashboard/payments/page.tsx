@@ -61,8 +61,13 @@ const Payments = () => {
 
   // ✅ Filter payments based on search criteria (Collector + Date Range)
   const filteredPayments = payments.filter((payment) => {
+    // const isCollectorMatch =
+    //   searchCollector === "" || payment.collectorName.toLowerCase().includes(searchCollector.toLowerCase());
     const isCollectorMatch =
-      searchCollector === "" || payment.collectorName.toLowerCase().includes(searchCollector.toLowerCase());
+    searchCollector === "" || 
+    payment.collectorName.toLowerCase().includes(searchCollector.toLowerCase()) ||
+    payment.customerName.toLowerCase().includes(searchCollector.toLowerCase());
+
 
     const isDateInRange =
       (fromDate === "" || payment.paymentDate >= fromDate) && (toDate === "" || payment.paymentDate <= toDate);
