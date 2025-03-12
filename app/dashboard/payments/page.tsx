@@ -40,6 +40,7 @@ const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): str
     timeZone: "Asia/Karachi",
   }).format(date);
 };
+
 const Payments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,6 +108,10 @@ const Payments = () => {
   const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   const exportToExcel = () => {
+    if (filteredPayments.length === 0) {
+      alert("No data available to export!");
+      return;
+    }
      // Prepare the data for the Excel file
      const data = filteredPayments.map((payment) => ({
        "Collector Name": payment.collectorName,

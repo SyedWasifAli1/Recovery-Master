@@ -105,6 +105,10 @@ const TransfersListPage = () => {
   });
 
   const exportToExcel = () => {
+    if (filteredTransfers.length === 0) {
+      alert("No data available to export!");
+      return;
+    }
     // Prepare the data for the Excel file
     const data = filteredTransfers.map((transfer) => ({
       "Transfer Date": transfer.transfer_date,

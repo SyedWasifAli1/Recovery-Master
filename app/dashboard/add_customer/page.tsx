@@ -84,11 +84,14 @@ const AddCustomerPage = () => {
     if (selectedPackage) {
       const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
       if (selectedPkg) {
-        const finalPrice = selectedPkg.price - (selectedPkg.price * discount) / 100;
+      const selectedPkg_device = selectedPkg.price * device;
+
+        // const finalPrice = selectedPkg.price - (selectedPkg.price * discount) / 100;
+        const finalPrice = selectedPkg_device - (selectedPkg.price * discount) / 100;
         setFinalPrice(finalPrice);
       }
     }
-  }, [selectedPackage, discount, packages]);
+  }, [selectedPackage, discount, packages,device]);
 
   const validateInputs = () => {
     const newErrors: { [key: string]: string } = {};
@@ -165,35 +168,73 @@ const AddCustomerPage = () => {
       alert("Please select a CSV file to upload.");
       return;
     }
-
+  
     setIsLoading(true);
     try {
       Papa.parse(bulkFile, {
         header: true,
         complete: async (result) => {
           const customers = result.data as Customer[];
-
+  
           for (const customer of customers) {
-            const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
-
-            if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
+            const {
+              name,
+              username,
+              contactNumber,
+              completeAddress,
+              area,
+              city,
+              category,
+              selectedPackage,
+              selectedCollector,
+              discount,
+              device,
+              finalPrice,
+            } = customer;
+  
+            // Validate required fields
+            if (
+              !name ||
+              !username ||
+              !contactNumber ||
+              !completeAddress ||
+              !area ||
+              !city ||
+              !category ||
+              !selectedPackage ||
+              !selectedCollector ||
+              discount === undefined ||
+              device === undefined ||
+              finalPrice === undefined
+            ) {
               console.warn("Skipping incomplete customer data:", customer);
               continue;
             }
-
+  
+            const currentDate = new Date();
+            const lastPayDate = new Date(currentDate);
+            lastPayDate.setMonth(lastPayDate.getMonth() - 1);
+  
             const customerData = {
               name,
               username,
               contactNumber,
               completeAddress,
               area,
+              city,
+              category,
               selectedPackage,
-              createDate: new Date(),
+              selectedCollector,
+              discount,
+              device,
+              finalPrice,
+              createDate: currentDate,
+              lastpay: lastPayDate,
             };
-
+  
             await addDoc(collection(firestore, "customers"), customerData);
           }
-
+  
           alert("Bulk upload successful!");
           setBulkFile(null);
         },
@@ -212,7 +253,7 @@ const AddCustomerPage = () => {
 
   const handleDownloadFormat = () => {
     const headers = [
-      ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount", "Final Price", "Create Date", "Last Pay"],
+      ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount","Device", "Final Price", "Create Date", "Last Pay"],
     ];
 
     const emptyRow = [{
@@ -226,6 +267,7 @@ const AddCustomerPage = () => {
       selectedPackage: "",
       selectedCollector: "",
       discount: "",
+      device:"",
       finalPrice: "",
       createDate: "",
       lastpay: "",
@@ -307,7 +349,7 @@ const AddCustomerPage = () => {
           <label className="block text-gray-700 font-medium mb-2">Select Package Price</label>
           <select
             value={selectedPackage || ""}
-            onChange={(e) => setSelectedPackage(e.target.value)}
+            onChange={(e) => setSelectedPackage(e.target.value )}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="">Package Price</option>

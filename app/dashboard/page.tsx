@@ -275,206 +275,286 @@
 //     </div>
 //   );
 // }
+"use client"
 
-
-"use client";
-import { useEffect, useState } from "react";
-import { firestore } from "../lib/firebase-config";
-import { collection, getDocs } from "firebase/firestore";
-import { Bar, Pie, Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, LineElement, PointElement } from "chart.js";
-import withAuth from "../lib/withauth";
+import { useEffect, useState } from "react"
+import { firestore } from "../lib/firebase-config"
+import { collection, getDocs } from "firebase/firestore"
+import { Bar, Pie } from "react-chartjs-2"
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from "chart.js"
+import withAuth from "../lib/withauth"
+import {  FiLogOut,  FiUsers, FiMapPin } from "react-icons/fi"
+import { signOut } from "firebase/auth"
+import { auth } from '../lib/firebase-config'
+import router from "next/router"
 
 // Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  LineElement,
-  PointElement // Register PointElement for Line chart
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
 // Define the type for the chart data
 interface ChartData {
-  labels: string[];
+  labels: string[]
   datasets: {
-    label: string;
-    data: number[];
-    backgroundColor: string | string[];
-    borderColor: string;
-    borderWidth: number;
-    fill?: boolean;  // Add the fill property for Line chart
-  }[];
+    label: string
+    data: number[]
+    backgroundColor: string | string[]
+    borderColor: string
+    borderWidth: number
+  }[]
 }
 
-const OrdersChart = () => {
-  const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [pieData, setPieData] = useState<ChartData | null>(null);
-  const [lineData, setLineData] = useState<ChartData | null>(null); // New state for Line chart
-
+const Dashboard = () => {
+  const [customersData, setCustomersData] = useState<ChartData | null>(null)
+  const [collectorsData, setCollectorsData] = useState<ChartData | null>(null)
+  const [totalCustomers, setTotalCustomers] = useState<number>(0)
+  const [totalCollectors, setTotalCollectors] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+ const handleLogout = async () => {
+    try {
+      await signOut(auth); // Sign out the user from Firebases
+      alert('You have been logged out!');
+      router.push('/'); // Redirect to login page (or wherever you want to redirect the user)
+    } catch (error) {
+      console.error('Error signing out:', error);
+      alert('Failed to sign out. Please try again.');
+    }
+  };
   useEffect(() => {
-    const fetchOrdersAndUsers = async () => {
-      let monthlyData: { [key: string]: number } = {};
-      let cityData: { [key: string]: number } = {};  // Grouping by city for Pie chart
-      let usersData: { [key: string]: number } = {};  // Grouping users by month for Line chart
+    const fetchData = async () => {
+      setIsLoading(true)
+      try {
+        // Fetch Customers Data
+        const customersSnapshot = await getDocs(collection(firestore, "customers"))
+        const customersMonthlyData: { [key: string]: number } = {}
+        let totalCustomersCount = 0
 
-      const ordersSnapshot = await getDocs(collection(firestore, "orders"));
-      const customersSnapshot = await getDocs(collection(firestore, "customers")); // Fetch users data
-
-      // Fetching orders data and processing
-      for (const orderDoc of ordersSnapshot.docs) {
-        const userOrdersSnapshot = await getDocs(collection(firestore, `orders/${orderDoc.id}/user_orders`));
-
-        userOrdersSnapshot.docs.forEach(userOrderDoc => {
-          const { datetime, deliveryDetails } = userOrderDoc.data(); // Fetch deliveryDetails
-
-          if (datetime && datetime.toDate) {
-            const date = datetime.toDate(); // Convert Firestore Timestamp to JavaScript Date
-            const month = date.toLocaleString("en-US", { month: "short" }); // Get short month name
-
-            // Group by month and increment count for Bar chart
-            if (!monthlyData[month]) monthlyData[month] = 0;
-            monthlyData[month] += 1;
-
-            // Group by city and increment count for Pie chart
-            if (deliveryDetails && deliveryDetails.city) {
-              const city = deliveryDetails.city;  // Extract city from deliveryDetails
-              if (!cityData[city]) cityData[city] = 0;
-              cityData[city] += 1;
-            }
+        customersSnapshot.docs.forEach((customerDoc) => {
+          const { createDate } = customerDoc.data()
+          if (createDate && createDate.toDate) {
+            const date = createDate.toDate()
+            const month = date.toLocaleString("en-US", { month: "short" })
+            if (!customersMonthlyData[month]) customersMonthlyData[month] = 0
+            customersMonthlyData[month] += 1
+            totalCustomersCount += 1
           }
-        });
+        })
+
+        // Sort months chronologically
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const sortedMonths = Object.keys(customersMonthlyData).sort((a, b) => months.indexOf(a) - months.indexOf(b))
+
+        setCustomersData({
+          labels: sortedMonths,
+          datasets: [
+            {
+              label: "Monthly Customers",
+              data: sortedMonths.map((month) => customersMonthlyData[month]),
+              backgroundColor: "rgba(59, 130, 246, 0.7)",
+              borderColor: "rgba(59, 130, 246, 1)",
+              borderWidth: 1,
+            },
+          ],
+        })
+        setTotalCustomers(totalCustomersCount)
+
+        // Fetch Collectors Data
+        const collectorsSnapshot = await getDocs(collection(firestore, "collectors"))
+        const collectorsCityData: { [key: string]: number } = {}
+        let totalCollectorsCount = 0
+
+        collectorsSnapshot.docs.forEach((collectorDoc) => {
+          const { completeAddress } = collectorDoc.data()
+          if (completeAddress) {
+            if (!collectorsCityData[completeAddress]) collectorsCityData[completeAddress] = 0
+            collectorsCityData[completeAddress] += 1
+            totalCollectorsCount += 1
+          }
+        })
+
+        setCollectorsData({
+          labels: Object.keys(collectorsCityData),
+          datasets: [
+            {
+              label: "Collectors by City",
+              data: Object.values(collectorsCityData),
+              backgroundColor: [
+                "rgba(239, 68, 68, 0.7)",
+                "rgba(59, 130, 246, 0.7)",
+                "rgba(234, 179, 8, 0.7)",
+                "rgba(16, 185, 129, 0.7)",
+                "rgba(139, 92, 246, 0.7)",
+              ],
+              borderColor: "rgba(255, 255, 255, 0.8)",
+              borderWidth: 2,
+            },
+          ],
+        })
+        setTotalCollectors(totalCollectorsCount)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setIsLoading(false)
       }
+    }
 
-      // Fetching users data and processing
-      customersSnapshot.docs.forEach(customerDoc => {
-        const { datetime } = customerDoc.data(); // Assuming createdAt is a timestamp for when user joined
-
-        if (datetime && datetime.toDate) {
-          const date = datetime.toDate(); // Convert Firestore Timestamp to JavaScript Date
-          const month = date.toLocaleString("en-US", { month: "short" }); // Get short month name
-
-          // Group by month and increment count for Line chart
-          if (!usersData[month]) usersData[month] = 0;
-          usersData[month] += 1;
-        }
-      });
-
-      // Prepare the Bar chart data
-      const barLabels = Object.keys(monthlyData);
-      const barDataValues = Object.values(monthlyData);
-
-      // Prepare the Pie chart data (grouped by city)
-      const pieLabels = Object.keys(cityData);
-      const pieDataValues = Object.values(cityData);
-
-      // Prepare the Line chart data (grouped by users' creation month)
-      const lineLabels = Object.keys(usersData);
-      const lineDataValues = Object.values(usersData);
-
-      // Set chart data with explicit typing for Bar chart
-      setChartData({
-        labels: barLabels,
-        datasets: [
-          {
-            label: "Monthly Customers",
-            data: barDataValues,
-            backgroundColor: "rgba(75, 192, 192, 0.6)",
-            borderColor: "rgba(75, 192, 192, 1)",
-            borderWidth: 1,
-          },
-        ],
-      });
-
-      // Set chart data with explicit typing for Pie chart
-      setPieData({
-        labels: pieLabels,
-        datasets: [
-          {
-            label: "Collectors",
-            data: pieDataValues,
-            backgroundColor: [
-              "rgba(75, 192, 192, 0.6)",
-              "rgba(255, 99, 132, 0.6)",
-              "rgba(255, 159, 64, 0.6)",
-              "rgba(153, 102, 255, 0.6)",
-              "rgba(54, 162, 235, 0.6)",
-            ],  // Array of colors for each pie slice
-            borderColor: "rgba(0, 0, 0, 1)",
-            borderWidth: 1,
-          },
-        ],
-      });
-
-      // Set chart data with explicit typing for Line chart (users over time)
-      setLineData({ 
-        labels: lineLabels,
-        datasets: [
-          {
-            label: "Monthly Payments",
-            data: lineDataValues,
-            backgroundColor: "rgba(153, 102, 255, 0.6)",
-            borderColor: "rgba(153, 102, 255, 1)",
-            borderWidth: 2,
-            fill: false,  // Fill property works now
-          },
-        ],
-      });
-    };
-
-    fetchOrdersAndUsers();
-  }, []);
+    fetchData()
+  }, [])
 
   return (
-        <div className="m-screen p-8 text-black bg-white">
-      <h1 className="text-3xl font-bold text-red-600 mb-6">Dashboard Overview</h1>
+    <div className="min-h-screen p-6 md:p-8 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-red-600">Dashboard Overview</h1>
+            <div className="flex items-center space-x-4">
+              {/* <button className="p-2 rounded-full hover:bg-gray-100">
+                <FiHome className="h-5 w-5 text-gray-600" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <FiPackage className="h-5 w-5 text-gray-600" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <FiMenu className="h-5 w-5 text-gray-600" />
+              </button> */}
+               
+              <button     onClick={handleLogout}
+              className="p-2 rounded-full hover:bg-gray-100">
+                <FiLogOut className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+          </div>
+          <p className="text-gray-600">Monitor your customers and collectors at a glance</p>
+        </header>
 
-  
-{/*         <p className="text-center text-lg font-semibold text-gray-700">Loading data...</p> */}
-      
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Bar Chart */}
-          <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-red-600 mb-3">Total Customers</h2>
-            {chartData ? <Bar data={chartData} /> : <p>Loading...</p>}
+        {/* Totals Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-blue-100 rounded-lg mr-4">
+                <FiUsers className="h-6 w-6 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Total Customers</h2>
+            </div>
+            {isLoading ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <div className="flex items-baseline">
+                <p className="text-3xl font-bold text-blue-600">{totalCustomers}</p>
+                <p className="ml-2 text-sm text-gray-500">registered users</p>
+              </div>
+            )}
           </div>
 
-          {/* Pie Chart */}
-          <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-red-600 mb-3">Total Collectors</h2>
-            {pieData ? <Pie data={pieData} /> : <p>Loading...</p>}
-          </div>
-
-          {/* Line Chart */}
-          <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold text-red-600 mb-3">Total Remaining Payments</h2>
-            {lineData ? <Line data={lineData} /> : <p>Loading...</p>}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-red-100 rounded-lg mr-4">
+                <FiMapPin className="h-6 w-6 text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Total Collectors</h2>
+            </div>
+            {isLoading ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <div className="flex items-baseline">
+                <p className="text-3xl font-bold text-red-600">{totalCollectors}</p>
+                <p className="ml-2 text-sm text-gray-500">active collectors</p>
+              </div>
+            )}
           </div>
         </div>
-    
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bar Chart for Customers */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Monthly Customers</h2>
+            {isLoading ? (
+              <div className="h-64 w-full bg-gray-100 animate-pulse rounded flex items-center justify-center">
+                <p className="text-gray-400">Loading chart data...</p>
+              </div>
+            ) : customersData ? (
+              <div className="h-64">
+                <Bar
+                  data={customersData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top",
+                      },
+                      tooltip: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        padding: 12,
+                        titleFont: {
+                          size: 14,
+                        },
+                        bodyFont: {
+                          size: 13,
+                        },
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          precision: 0,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-12">No customer data available</p>
+            )}
+          </div>
+
+          {/* Pie Chart for Collectors */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Collectors by City</h2>
+            {isLoading ? (
+              <div className="h-64 w-full bg-gray-100 animate-pulse rounded flex items-center justify-center">
+                <p className="text-gray-400">Loading chart data...</p>
+              </div>
+            ) : collectorsData ? (
+              <div className="h-64">
+                <Pie
+                  data={collectorsData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "right",
+                        labels: {
+                          boxWidth: 15,
+                          padding: 15,
+                        },
+                      },
+                      tooltip: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        padding: 12,
+                        titleFont: {
+                          size: 14,
+                        },
+                        bodyFont: {
+                          size: 13,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-12">No collector data available</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
+  )
+}
 
-    // <div className="w-full max-w-2xl mx-auto bg-white p-4 rounded-lg shadow">
-    //   <h2 className="text-xl font-semibold text-center mb-4">Monthly Orders</h2>
-      
-    //   {/* Bar Chart */}
-    //   {chartData ? <Bar data={chartData} /> : <p>Loading...</p>}
+export default withAuth(Dashboard)
 
-    //   <h2 className="text-xl font-semibold text-center mb-4 mt-8">Orders by City</h2>
-      
-    //   {/* Pie Chart */}
-    //   {pieData ? <Pie data={pieData} /> : <p>Loading...</p>}
-
-    //   <h2 className="text-xl font-semibold text-center mb-4 mt-8">Monthly Users</h2>
-      
-    //   {/* Line Chart for Users */}
-    //   {lineData ? <Line data={lineData} /> : <p>Loading...</p>}
-    // </div>
-  );
-};
-
-export default withAuth(OrdersChart);
