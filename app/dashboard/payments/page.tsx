@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, query, orderBy, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, getDoc, Timestamp } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
 import * as XLSX from "xlsx";
 
@@ -13,8 +13,33 @@ interface Payment {
   customerName: string;
   collectorName: string;
   paymentDate: string;
+  paymentDatefilter: string;
 }
+const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string => {
+  if (!timestamp) return "Unknown";
+  const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Karachi",
+  }).format(date);
+};
 
+const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): string => {
+  if (!timestamp) return "Unknown";
+  const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Karachi",
+  }).format(date);
+};
 const Payments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +72,10 @@ const Payments = () => {
             amount: payment.amount,
             customerName: payment.customerName,
             collectorName,
-            paymentDate: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0], // YYYY-MM-DD
+            paymentDatefilter:formatFirestoreDatefilter(payment.paymentDate),
+            // paymentDatefilter: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0],
+             // YYYY-MM-DD
+             paymentDate:formatFirestoreDate(payment.paymentDate)
           };
         })
       );
@@ -70,7 +98,7 @@ const Payments = () => {
 
 
     const isDateInRange =
-      (fromDate === "" || payment.paymentDate >= fromDate) && (toDate === "" || payment.paymentDate <= toDate);
+      (fromDate === "" || payment.paymentDatefilter >= fromDate) && (toDate === "" || payment.paymentDatefilter <= toDate);
 
     return isCollectorMatch && isDateInRange;
   });
@@ -78,14 +106,25 @@ const Payments = () => {
   // ✅ Calculate total amount of filtered payments
   const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  // ✅ Convert to Excel Function
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredPayments);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
-
-    XLSX.writeFile(workbook, "Payments.xlsx");
-  };
+     // Prepare the data for the Excel file
+     const data = filteredPayments.map((payment) => ({
+       "Collector Name": payment.collectorName,
+       "Customer Name": payment.customerName,
+       "Amount": payment.amount,
+       "Payment Date": payment.paymentDate,
+     }));
+   
+     // Create a worksheet from the data
+     const worksheet = XLSX.utils.json_to_sheet(data);
+   
+     // Create a workbook and add the worksheet
+     const workbook = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+   
+     // Write the workbook to a file and trigger the download
+     XLSX.writeFile(workbook, "Payments.xlsx");
+   };
 
   return (
     <div className="p-4 max-w-4xl mx-auto">

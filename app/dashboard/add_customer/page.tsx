@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config"; // Adjust the path
-import { collection, getDocs, addDoc,  } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import Papa from "papaparse"; // Import PapaParse
 import withAuth from "@/app/lib/withauth";
 import * as XLSX from "xlsx";
+
 interface Package {
   id: string;
   name: string;
   price: number;
   size: string;
 }
+
 interface Customer {
   name: string;
   username: string;
@@ -23,6 +25,7 @@ interface Customer {
   selectedPackage: string;
   selectedCollector: string;
   discount: number;
+  device: number;
   finalPrice: number;
   createDate: Date;
   lastpay: Date;
@@ -40,15 +43,17 @@ const AddCustomerPage = () => {
   const [username, setUsername] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [completeAddress, setCompleteAddress] = useState("");
-  const [city, setcity] = useState("");
-  const [category, setcategory] = useState("");
-  const [area, setarea] = useState("");
+  const [city, setCity] = useState("");
+  const [category, setCategory] = useState("");
+  const [area, setArea] = useState("");
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [selectedCollector, setSelectedCollector] = useState<string | null>(null);
   const [discount, setDiscount] = useState<number>(0);
+  const [device, setDevice] = useState<number>(1);
   const [finalPrice, setFinalPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({}); // Error state
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -85,31 +90,34 @@ const AddCustomerPage = () => {
     }
   }, [selectedPackage, discount, packages]);
 
+  const validateInputs = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!name) newErrors.name = "Name is required.";
+    if (!username) newErrors.username = "Business Name is required.";
+    if (!contactNumber) newErrors.contactNumber = "Contact Number is required.";
+    if (!completeAddress) newErrors.completeAddress = "Complete Address is required.";
+    if (!area) newErrors.area = "Area is required.";
+    if (!city) newErrors.city = "City is required.";
+    if (!category) newErrors.category = "Category is required.";
+    if (!selectedPackage) newErrors.selectedPackage = "Package is required.";
+    if (!selectedCollector) newErrors.selectedCollector = "Collector is required.";
+    if (device < 1) newErrors.device = "Number of devices must be at least 1.";
+    if (discount < 0 || discount > 100) newErrors.discount = "Discount must be between 0 and 100.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Return true if no errors
+  };
+
   const handleAddCustomer = async () => {
-    if (
-      !name ||
-      !username ||
-      !contactNumber ||
-      !completeAddress ||
-      !area ||
-      !city ||
-      !category ||
-      !selectedPackage ||
-      !selectedCollector
-    ) {
-      alert("Please fill all fields.");
-      return;
-    }
-  
+    if (!validateInputs()) return; // Stop if validation fails
+
     setIsLoading(true);
     try {
-      // Get the current date
       const currentDate = new Date();
-  
-      // Calculate the date one month before the current date
       const lastPayDate = new Date(currentDate);
       lastPayDate.setMonth(lastPayDate.getMonth() - 1);
-  
+
       const customerData = {
         name,
         username,
@@ -121,23 +129,29 @@ const AddCustomerPage = () => {
         selectedPackage,
         selectedCollector,
         discount,
+        device,
         finalPrice,
-        createDate: currentDate, // Current date
-        lastpay: lastPayDate, // One month before the current date
+        createDate: currentDate,
+        lastpay: lastPayDate,
       };
-  
+
       await addDoc(collection(firestore, "customers"), customerData);
-  
+
       alert("Customer added successfully!");
+      // Reset form fields
       setName("");
       setUsername("");
       setContactNumber("");
       setCompleteAddress("");
-      setarea("");
+      setArea("");
+      setCity("");
+      setCategory("");
       setSelectedPackage(null);
       setSelectedCollector(null);
       setDiscount(0);
+      setDevice(1);
       setFinalPrice(0);
+      setErrors({}); // Clear errors
     } catch (error) {
       console.error("Error adding customer:", error);
       alert("Failed to add customer: " + error);
@@ -145,176 +159,85 @@ const AddCustomerPage = () => {
       setIsLoading(false);
     }
   };
-//   const handleBulkUpload = async () => {
-//     if (!bulkFile) {
-//         alert("Please select a CSV file to upload.");
-//         return;
-//     }
 
-//     setIsLoading(true);
+  const handleBulkUpload = async () => {
+    if (!bulkFile) {
+      alert("Please select a CSV file to upload.");
+      return;
+    }
 
-//     try {
-//         Papa.parse(bulkFile, {
-//             header: true,
-//             skipEmptyLines: true, // ✅ Empty rows ignore
-//             complete: async (result) => {
-//                 console.log("Parsed CSV Data:", result.data); // ✅ Debugging
+    setIsLoading(true);
+    try {
+      Papa.parse(bulkFile, {
+        header: true,
+        complete: async (result) => {
+          const customers = result.data as Customer[];
 
-//                 const customers = result.data as Customer[];
-//                 const customerPromises = customers.map(async (customer) => {
-//                     const { 
-//                         name, username, contactNumber, completeAddress, 
-//                         area, city, category, selectedPackage, selectedCollector 
-//                     } = customer;
+          for (const customer of customers) {
+            const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
 
-//                     // ✅ Required Fields Check
-//                     if (!name || !username || !contactNumber || !completeAddress || 
-//                         !area || !city || !category || !selectedPackage || !selectedCollector) {
-//                         console.warn("Skipping incomplete customer data:", customer);
-//                         return null;
-//                     }
+            if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
+              console.warn("Skipping incomplete customer data:", customer);
+              continue;
+            }
 
-//                     // ✅ Package Lookup
-//                     const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
-//                     const finalPrice = selectedPkg ? selectedPkg.price - (selectedPkg.price * discount) / 100 : 0;
+            const customerData = {
+              name,
+              username,
+              contactNumber,
+              completeAddress,
+              area,
+              selectedPackage,
+              createDate: new Date(),
+            };
 
-//                     // ✅ selectedCollector Resolve from Firestore
-//                     const selectedCollectorRef = doc(firestore, "collectors", selectedCollector);
-//                     const selectedCollectorDoc = await getDoc(selectedCollectorRef);
-
-//                     if (!selectedCollectorDoc.exists()) {
-//                         console.warn("Collector not found:", selectedCollector);
-//                         return null;
-//                     }
-
-//                     // ✅ Prepare Customer Data
-//                     const customerData = {
-//                         name,
-//                         username,
-//                         contactNumber,
-//                         completeAddress,
-//                         area,
-//                         city,
-//                         category,
-//                         selectedPackage,
-//                         selectedCollector: selectedCollectorDoc.id, // ✅ Correct Firestore ID
-//                         discount,
-//                         finalPrice,
-//                         createDate: new Date(),
-//                         lastpay: new Date(),
-//                     };
-
-//                     return addDoc(collection(firestore, "customers"), customerData);
-//                 });
-
-//                 // ✅ Bulk Firestore Insert
-//                 await Promise.all(customerPromises);
-//                 alert("Bulk upload successful!");
-//                 setBulkFile(null);
-//             },
-//             error: (error) => {
-//                 console.error("Error parsing CSV:", error);
-//                 alert("Failed to upload CSV. Please check the file format.");
-//             },
-//         });
-//     } catch (error) {
-//         console.error("Error during bulk upload:", error);
-//         alert("Failed to upload customers: " + error);
-//     } finally {
-//         setIsLoading(false);
-//     }
-// };
-const handleBulkUpload = async () => {
-  if (!bulkFile) {
-    alert("Please select a CSV file to upload.");
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    // Parse the CSV file
-    Papa.parse(bulkFile, {
-      header: true, // Add this line
-      complete: async (result) => {
-        console.log("Parsed CSV data:", result.data); // Now you should see only the customer rows
-        const customers = result.data as Customer[];
-
-        // Process each customer and add to Firestore
-        for (const customer of customers) {
-          const { name, username, contactNumber, completeAddress, area, selectedPackage } = customer;
-
-          if (!name || !username || !contactNumber || !completeAddress || !area || !selectedPackage) {
-            console.warn("Skipping incomplete customer data:", customer);
-            continue; // Skip incomplete rows
+            await addDoc(collection(firestore, "customers"), customerData);
           }
 
-          const customerData = {
-            name,
-            username,
-            contactNumber,
-            completeAddress,
-            area,
-            selectedPackage,
-            createDate: new Date(), // Setting the create date to the current date
-          };
+          alert("Bulk upload successful!");
+          setBulkFile(null);
+        },
+        error: (error) => {
+          console.error("Error parsing CSV:", error);
+          alert("Failed to upload CSV. Please check the file format.");
+        },
+      });
+    } catch (error) {
+      console.error("Error during bulk upload:", error);
+      alert("Failed to upload customers: " + error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-          // Add each customer to Firestore
-          await addDoc(collection(firestore, "customers"), customerData);
-        }
+  const handleDownloadFormat = () => {
+    const headers = [
+      ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount", "Final Price", "Create Date", "Last Pay"],
+    ];
 
-        alert("Bulk upload successful!");
-        setBulkFile(null); // Reset the file after successful upload
-      },
-      error: (error) => {
-        console.error("Error parsing CSV:", error);
-        alert("Failed to upload CSV. Please check the file format.");
-      },
-    });
-  } catch (error) {
-    console.error("Error during bulk upload:", error);
-    alert("Failed to upload customers: " + error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    const emptyRow = [{
+      name: "",
+      username: "",
+      contactNumber: "",
+      completeAddress: "",
+      area: "",
+      city: "",
+      category: "",
+      selectedPackage: "",
+      selectedCollector: "",
+      discount: "",
+      finalPrice: "",
+      createDate: "",
+      lastpay: "",
+    }];
 
-const handleDownloadFormat = () => {
-  // Define headers same as Customer interface
-  const headers = [
-    ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount", "Final Price", "Create Date", "Last Pay"]
-  ];
+    const worksheet = XLSX.utils.json_to_sheet(emptyRow, { header: Object.keys(emptyRow[0]) });
+    XLSX.utils.sheet_add_aoa(worksheet, headers, { origin: "A1" });
 
-  // Empty data row for format
-  const emptyRow = [{
-    name: "",
-    username: "",
-    contactNumber: "",
-    completeAddress: "",
-    area: "",
-    city: "",
-    category: "",
-    selectedPackage: "",
-    selectedCollector: "",
-    discount: "",
-    finalPrice: "",
-    createDate: "",
-    lastpay: ""
-  }];
-
-  // Convert data to worksheet
-  const worksheet = XLSX.utils.json_to_sheet(emptyRow, { header: Object.keys(emptyRow[0]) });
-
-  // Set header row manually
-  XLSX.utils.sheet_add_aoa(worksheet, headers, { origin: "A1" });
-
-  // Create workbook and append worksheet
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
-
-  // Write and trigger download
-  XLSX.writeFile(workbook, "Customer_Format.xlsx");
-};
-
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
+    XLSX.writeFile(workbook, "Customer_Format.xlsx");
+  };
 
   return (
     <div className="container mx-auto p-6 pt-0">
@@ -350,6 +273,7 @@ const handleDownloadFormat = () => {
             onChange={(e) => setName(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
 
         {/* Username */}
@@ -362,6 +286,7 @@ const handleDownloadFormat = () => {
             onChange={(e) => setUsername(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
         </div>
 
         {/* Contact Number */}
@@ -374,6 +299,7 @@ const handleDownloadFormat = () => {
             onChange={(e) => setContactNumber(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          {errors.contactNumber && <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>}
         </div>
 
         {/* Select Package */}
@@ -391,44 +317,69 @@ const handleDownloadFormat = () => {
               </option>
             ))}
           </select>
+          {errors.selectedPackage && <p className="text-red-500 text-sm mt-1">{errors.selectedPackage}</p>}
         </div>
 
         {/* Complete Address & area in a single row */}
         <div className="bg-white shadow-md rounded p-4 col-span-2 sm:col-span-3 lg:col-span-4 grid grid-cols-2 gap-4">
-          <div className="p-4">
-            <label className="block text-gray-700 font-medium mb-2">Select Collector</label>
-            <select
-              value={selectedCollector || ""}
-              onChange={(e) => setSelectedCollector(e.target.value)}
-              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">Select Collector</option>
-              {collectors.map((collector) => (
-                <option key={collector.id} value={collector.id}>{collector.name}</option>
-              ))}
-            </select>
+          <div className="p-4 flex gap-4">
+            <div className="flex-1">
+              <label className="block text-gray-700 font-medium mb-2">Select Collector</label>
+              <select
+                value={selectedCollector || ""}
+                onChange={(e) => setSelectedCollector(e.target.value)}
+                className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Select Collector</option>
+                {collectors.map((collector) => (
+                  <option key={collector.id} value={collector.id}>{collector.name}</option>
+                ))}
+              </select>
+              {errors.selectedCollector && <p className="text-red-500 text-sm mt-1">{errors.selectedCollector}</p>}
+            </div>
+            <div className="flex-1">
+  <label className="block text-gray-700 font-medium mb-2">Number Of Device</label>
+  <input
+    type="number"
+    placeholder="Number Of Device"
+    value={device}
+    onChange={(e) => {
+      const value = Number(e.target.value);
+      if (value < 1) {
+        setErrors({ ...errors, device: "Number of devices must be at least 1." });
+      } else {
+        setErrors({ ...errors, device: "" }); // Clear error
+      }
+      setDevice(value < 1 ? 1 : value); // Ensure value is at least 1
+    }}
+    min="1"
+    className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+  />
+  {errors.device && <p className="text-red-500 text-sm mt-1">{errors.device}</p>}
+</div>
           </div>
           <div className="p-4 flex gap-4">
-  <div className="flex-1">
-    <label className="block text-gray-700 font-medium mb-2">Discount (%)</label>
-    <input
-      type="number"
-      placeholder="Discount"
-      value={discount}
-      onChange={(e) => setDiscount(Number(e.target.value))}
-      className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-    />
-  </div>
-  <div className="flex-1">
-    <label className="block text-gray-700 font-medium mb-2">Final Price</label>
-    <input
-      type="text"
-      value={`Rs.${finalPrice.toFixed(2)}`}
-      disabled
-      className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-    />
-  </div>
-</div>
+            <div className="flex-1">
+              <label className="block text-gray-700 font-medium mb-2">Discount (%)</label>
+              <input
+                type="number"
+                placeholder="Discount"
+                value={discount}
+                onChange={(e) => setDiscount(Number(e.target.value))}
+                className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              {errors.discount && <p className="text-red-500 text-sm mt-1">{errors.discount}</p>}
+            </div>
+            <div className="flex-1">
+              <label className="block text-gray-700 font-medium mb-2">Final Price</label>
+              <input
+                type="text"
+                value={`Rs.${finalPrice.toFixed(2)}`}
+                disabled
+                className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">Complete Address</label>
             <textarea
@@ -437,6 +388,7 @@ const handleDownloadFormat = () => {
               onChange={(e) => setCompleteAddress(e.target.value)}
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {errors.completeAddress && <p className="text-red-500 text-sm mt-1">{errors.completeAddress}</p>}
           </div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">Area</label>
@@ -444,9 +396,10 @@ const handleDownloadFormat = () => {
               type="text"
               placeholder="Area"
               value={area}
-              onChange={(e) => setarea(e.target.value)}
+              onChange={(e) => setArea(e.target.value)}
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {errors.area && <p className="text-red-500 text-sm mt-1">{errors.area}</p>}
           </div>
 
           <div>
@@ -455,9 +408,10 @@ const handleDownloadFormat = () => {
               type="text"
               placeholder="Category"
               value={category}
-              onChange={(e) => setcategory(e.target.value)}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
           </div>
           <div>
             <label className="block text-gray-700 font-medium mb-2">City</label>
@@ -465,12 +419,11 @@ const handleDownloadFormat = () => {
               type="text"
               placeholder="City"
               value={city}
-              onChange={(e) => setcity(e.target.value)}
+              onChange={(e) => setCity(e.target.value)}
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
+            {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
           </div>
-          
-
         </div>
 
         {/* Add Customer Button */}
