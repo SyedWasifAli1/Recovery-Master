@@ -5,20 +5,20 @@ import { getFirestore } from 'firebase/firestore';  // For Firestore database
 
 const firebaseConfig = {
 
+    apiKey: "AIzaSyDNnJlrCfZqpsJMdyc4QMvRCRaReVusrIc",
+    authDomain: "londoncomputers-9aedc.firebaseapp.com",
+    projectId: "londoncomputers-9aedc",
+    storageBucket: "londoncomputers-9aedc.firebasestorage.app",
+    messagingSenderId: "50579533609",
+    appId: "1:50579533609:web:4eb19338a02c0d5150d138"
 
-    apiKey: "AIzaSyBybBOO1xADsLYshB1hKZy-H6DfbbSz7nM",
-    authDomain: "paypointrecovery.firebaseapp.com",
-    projectId: "paypointrecovery",
-    storageBucket: "paypointrecovery.firebasestorage.app",
-    messagingSenderId: "775548967805",
-    appId: "1:775548967805:web:a3dff79c9206fd9a26ca14",
+    // apiKey: "AIzaSyBybBOO1xADsLYshB1hKZy-H6DfbbSz7nM",
+    // authDomain: "paypointrecovery.firebaseapp.com",
+    // projectId: "paypointrecovery",
+    // storageBucket: "paypointrecovery.firebasestorage.app",
+    // messagingSenderId: "775548967805",
+    // appId: "1:775548967805:web:a3dff79c9206fd9a26ca14",
     // measurementId: "G-K8E5HYRNQH"
-    // apiKey: "AIzaSyDNnJlrCfZqpsJMdyc4QMvRCRaReVusrIc",
-    // authDomain: "londoncomputers-9aedc.firebaseapp.com",
-    // projectId: "londoncomputers-9aedc",
-    // storageBucket: "londoncomputers-9aedc.firebasestorage.app",
-    // messagingSenderId: "50579533609",
-    // appId: "1:50579533609:web:4eb19338a02c0d5150d138"
 
 
 
