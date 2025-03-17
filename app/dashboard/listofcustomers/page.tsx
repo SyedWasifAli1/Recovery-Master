@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, Timestamp, query, where, getDoc,doc, updateDoc} from "firebase/firestore";
 import { firestore } from "../../lib/firebase-config";
 import withAuth from "@/app/lib/withauth";
@@ -280,7 +280,7 @@ function Customers() {
   
 
 
-  const fetchCustomers = async (): Promise<void> => {
+  const fetchCustomers = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
       const customerSnapshot = await getDocs(collection(firestore, "customers"));
@@ -288,9 +288,8 @@ function Customers() {
         customerSnapshot.docs.map(async (customerDoc) => {
           const data = customerDoc.data() as Omit<Customer, "customerId"> & {
             createDate?: Timestamp | string;
-            // createDatefilter?: Timestamp | string;
             lastpay?: Timestamp | string;
-            selectedCollector?: string; // Assuming collectorId is stored in the customer document
+            selectedCollector?: string;
           };
   
           // Format the createDate
@@ -298,17 +297,15 @@ function Customers() {
           const createDatefilter = formatFirestoreDatefilter(data.createDate);
   
           // Calculate the status based on lastPay
-          let status = "Unknown"; // Default status
+          let status = "Unknown";
           let diffInMonths = 0;
           if (data.lastpay) {
-            // Check if lastPay exists
             const lastPayDate =
               data.lastpay instanceof Timestamp
                 ? data.lastpay.toDate()
                 : new Date(data.lastpay);
             const currentDate = new Date();
   
-            // Calculate the difference in months
             diffInMonths =
               (currentDate.getFullYear() - lastPayDate.getFullYear()) * 12 +
               (currentDate.getMonth() - lastPayDate.getMonth());
@@ -321,18 +318,17 @@ function Customers() {
               status = "Active";
             }
           } else {
-            console.warn(`Customer ${customerDoc.id} has no lastPay field.`); // Log a warning if lastPay is missing
+            console.warn(`Customer ${customerDoc.id} has no lastPay field.`);
           }
   
           // Fetch collector's name if collectorId exists
           let collectorName = "Unknown";
-      
           if (data.selectedCollector) {
-            const collectorDocRef = doc(firestore, "collectors", data.selectedCollector); // Create a reference to the collector document
-            const collectorDoc = await getDoc(collectorDocRef); // Fetch the collector document
+            const collectorDocRef = doc(firestore, "collectors", data.selectedCollector);
+            const collectorDoc = await getDoc(collectorDocRef);
             if (collectorDoc.exists()) {
-              const collectorData = collectorDoc.data() as { name: string }; // Explicitly type the data
-              collectorName = collectorData.name; // Get the collector's name
+              const collectorData = collectorDoc.data() as { name: string };
+              collectorName = collectorData.name;
             } else {
               console.warn(`Collector with ID ${data.selectedCollector} not found.`);
             }
@@ -343,9 +339,9 @@ function Customers() {
             ...data,
             createDate,
             createDatefilter,
-            status, // Add the status field
+            status,
             diffInMonths,
-            collectorName, // Add the collector's name
+            collectorName,
           };
         })
       );
@@ -353,15 +349,14 @@ function Customers() {
       setCustomers(customersData);
     } catch (error) {
       console.error("Error fetching customers:", error);
-    }finally{
+    } finally {
       setLoading(false);
     }
-  };
-
+  }, []); // Add dependencies if fetchCustomers depends on other variables
+  
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
-
+  }, [fetchCustomers]); // Now fetchCustomers is stable and can be safely added
 
   const handleViewPayments = async (customerId: string, selectedPackage: string, diffInMonths: number) => {
     setSelectedCustomerId(customerId);
