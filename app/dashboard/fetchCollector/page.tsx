@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import { collection, getDocs, Timestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
 import crypto from "crypto";
 import Loader from "@/components/loader";
 import * as XLSX from "xlsx";
-import { FiDownload } from "react-icons/fi";
+import { FiDownload, FiEdit, FiTrash } from "react-icons/fi";
 
 interface Collector {
   collectorId: number;
@@ -21,6 +21,7 @@ interface Collector {
   role: string;
   uid: string;
 }
+
 const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): string => {
   if (!timestamp) return "Unknown";
   const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
@@ -37,8 +38,10 @@ const CollectorsListPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchCollector, setSearchCollector] = useState("");
   const [selectedCollector, setSelectedCollector] = useState<Collector | null>(null);
-const [fromDate, setFromDate] = useState("");
+  const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [editingCollector, setEditingCollector] = useState<Collector | null>(null);
+
   useEffect(() => {
     const fetchCollectors = async () => {
       try {
@@ -53,12 +56,9 @@ const [fromDate, setFromDate] = useState("");
             contactNumber: data.contactNumber || "N/A",
             completeAddress: data.completeAddress || "N/A",
             totalPayments: data.totalPayments || 0,
-            // createDate: data.createDate?.seconds
-            //   ? new Date(data.createDate.seconds * 1000).toLocaleString("en-CA")
-            //   : "Unknown",
             createDate: formatFirestoreDatefilter(data.createDate),
             role: data.role || "N/A",
-            uid: data.uid || "N/A",
+            uid: doc.id, // Use the document ID as uid
           };
         });
         setCollectors(collectorsData);
@@ -68,56 +68,88 @@ const [fromDate, setFromDate] = useState("");
         setLoading(false);
       }
     };
-    // ✅ Function to Convert Firestore Document ID to a Numeric Hash
-const generateNumericHash = (id:string) => {
-  const hash = crypto.createHash("sha256").update(id).digest("hex");
-  return parseInt(hash.substring(0,10), 16) % 1000000; // ✅ Same modulo logic as Dart
-};
-
 
     fetchCollectors();
   }, []);
-  const filteredCollectors = collectors.filter((collectors) => {
+
+  const generateNumericHash = (id: string) => {
+    const hash = crypto.createHash("sha256").update(id).digest("hex");
+    return parseInt(hash.substring(0, 10), 16) % 1000000;
+  };
+
+  const handleDelete = async (collectorId: number) => {
+    try {
+      const collectorToDelete = collectors.find((c) => c.collectorId === collectorId);
+      if (collectorToDelete) {
+        await deleteDoc(doc(firestore, "collectors", collectorToDelete.uid));
+        setCollectors(collectors.filter((c) => c.collectorId !== collectorId));
+      }
+    } catch (error) {
+      console.error("Error deleting collector:", error);
+    }
+  };
+
+  const handleEdit = (collector: Collector) => {
+    setEditingCollector(collector);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCollector) return;
+
+    try {
+      const collectorRef = doc(firestore, "collectors", editingCollector.uid);
+      await updateDoc(collectorRef, {
+        name: editingCollector.name,
+        email: editingCollector.email,
+        contactNumber: editingCollector.contactNumber,
+        completeAddress: editingCollector.completeAddress,
+        totalPayments: editingCollector.totalPayments,
+      });
+      setCollectors(
+        collectors.map((c) => (c.collectorId === editingCollector.collectorId ? editingCollector : c))
+      );
+      setEditingCollector(null);
+    } catch (error) {
+      console.error("Error updating collector:", error);
+    }
+  };
+
+  const filteredCollectors = collectors.filter((collector) => {
     const isCollectorMatch =
-      searchCollector === "" || collectors.name?.toLowerCase().includes(searchCollector.toLowerCase());
+      searchCollector === "" || collector.name?.toLowerCase().includes(searchCollector.toLowerCase());
     const isDateInRange =
-      (fromDate === "" || collectors.createDate >= fromDate) && (toDate === "" || collectors.createDate <= toDate);
-    // const isPaymentTypeMatch =
-    //   paymentType === "all" || transfer.payment_type === paymentType; // Filter by payment type
+      (fromDate === "" || collector.createDate >= fromDate) && (toDate === "" || collector.createDate <= toDate);
     return isCollectorMatch && isDateInRange;
   });
+
   const exportToExcel = () => {
-       // Prepare the data for the Excel file
-       const data = filteredCollectors.map((Collector) => ({
-         "Collector Id": Collector.uid,
-         "Collector Name": Collector.name,
-         "Contact Number": Collector.contactNumber,
-         "Address": Collector.completeAddress,
-         "In Wallet": Collector.totalPayments,
-         "Email": Collector.email,
-         "Password": Collector.password,
-         "Created Date": Collector.createDate,
-       }));
-     
-       // Create a worksheet from the data
-       const worksheet = XLSX.utils.json_to_sheet(data);
-     
-       // Create a workbook and add the worksheet
-       const workbook = XLSX.utils.book_new();
-       XLSX.utils.book_append_sheet(workbook, worksheet, "Collectors");
-     
-       // Write the workbook to a file and trigger the download
-       XLSX.writeFile(workbook, "Collectors.xlsx");
-     };
+    const data = filteredCollectors.map((collector) => ({
+      "Collector Id": collector.uid,
+      "Collector Name": collector.name,
+      "Contact Number": collector.contactNumber,
+      Address: collector.completeAddress,
+      "In Wallet": collector.totalPayments,
+      Email: collector.email,
+      Password: collector.password,
+      "Created Date": collector.createDate,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Collectors");
+    XLSX.writeFile(workbook, "Collectors.xlsx");
+  };
+
   if (loading) {
-    return <div><Loader></Loader></div>;
+    return <div><Loader /></div>;
   }
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Collectors List</h1>
-      
-      <div className="grid grid-cols-4 gap-4 mb-4"> {/* Changed to 5 columns to accommodate the button */}
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        {/* Search and Date Filters */}
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector</label>
           <input
@@ -146,16 +178,14 @@ const generateNumericHash = (id:string) => {
             onChange={(e) => setToDate(e.target.value)}
           />
         </div>
-       
-        <div className="flex items-end"> {/* Added for the Download button */}
-        <button
-        onClick={exportToExcel}
-        className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
-      >
-        <FiDownload className="w-5 h-5 mr-2" /> {/* Add margin for spacing */}
-        Download {/* Optional text */}
-      </button>
-        
+        <div className="flex items-end">
+          <button
+            onClick={exportToExcel}
+            className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
+          >
+            <FiDownload className="w-5 h-5 mr-2" />
+            Download
+          </button>
         </div>
       </div>
       {collectors.length === 0 ? (
@@ -167,7 +197,7 @@ const generateNumericHash = (id:string) => {
               <tr className="bg-gray-200 text-left">
                 <th className="border border-gray-700 px-4 py-2">Collector ID</th>
                 <th className="border border-gray-700 px-4 py-2">Name</th>
-                <th className="border border-gray-700 px-4 py-2">ContactNumber</th>
+                <th className="border border-gray-700 px-4 py-2">Contact Number</th>
                 <th className="border border-gray-700 px-4 py-2">Email</th>
                 <th className="border border-gray-700 px-4 py-2">Password</th>
                 <th className="border border-gray-700 px-4 py-2">Action</th>
@@ -176,17 +206,29 @@ const generateNumericHash = (id:string) => {
             <tbody>
               {filteredCollectors.map((collector) => (
                 <tr key={collector.collectorId} className="hover:bg-gray-100">
-                  <td className="border border-gray-700 px-4 py-2">{collector.uid}</td>
+                  <td className="border border-gray-700 px-4 py-2">{collector.collectorId}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.name}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.contactNumber}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.email}</td>
                   <td className="border border-gray-700 px-4 py-2">{collector.password}</td>
-                  <td className="border border-gray-700 px-4 py-2">
+                  <td className="border border-gray-700 px-4 py-2 flex gap-2">
                     <button
                       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
                       onClick={() => setSelectedCollector(collector)}
                     >
                       Details
+                    </button>
+                    <button
+                      className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                      onClick={() => handleEdit(collector)}
+                    >
+                      <FiEdit />
+                    </button>
+                    <button
+                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+                      onClick={() => handleDelete(collector.collectorId)}
+                    >
+                      <FiTrash />
                     </button>
                   </td>
                 </tr>
@@ -214,6 +256,74 @@ const generateNumericHash = (id:string) => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {editingCollector && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Edit Collector</h2>
+            <form onSubmit={handleUpdate}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input
+                  type="text"
+                  className="p-2 border rounded w-full"
+                  value={editingCollector.name}
+                  onChange={(e) =>
+                    setEditingCollector({ ...editingCollector, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  className="p-2 border rounded w-full"
+                  value={editingCollector.email}
+                  onChange={(e) =>
+                    setEditingCollector({ ...editingCollector, email: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Contact Number</label>
+                <input
+                  type="text"
+                  className="p-2 border rounded w-full"
+                  value={editingCollector.contactNumber}
+                  onChange={(e) =>
+                    setEditingCollector({ ...editingCollector, contactNumber: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Address</label>
+                <input
+                  type="text"
+                  className="p-2 border rounded w-full"
+                  value={editingCollector.completeAddress}
+                  onChange={(e) =>
+                    setEditingCollector({ ...editingCollector, completeAddress: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700"
+                  onClick={() => setEditingCollector(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

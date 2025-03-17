@@ -11,6 +11,8 @@ import * as XLSX from "xlsx";
 import EditCustomerModal from "@/components/editcustomers";
 import jsPDF from 'jspdf';
   import html2canvas from 'html2canvas';
+
+
 interface Customer {
   customerId: string;
   name: string;
@@ -31,8 +33,10 @@ interface Customer {
   // lastpay: string; // Add lastpay (as string or Timestamp, depending on your use case)
   selectedCollector: string; // Add selectedCollector
   collectorName: string; // Add selectedCollector
+  packageName: string; // Add selectedCollector
+  packagePrice: number; // Add selectedCollector
+  
 }
-
 interface Payment {
   id: string;
   amount: number;
@@ -60,7 +64,8 @@ function Customers() {
   const [toDate, setToDate] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState<Customer | null>(null);
-
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
 
 
   const handleEdit = (customer: Customer) => {
@@ -167,12 +172,12 @@ function Customers() {
 
     const isDateInRange =
       (fromDate === "" || customer.createDatefilter >= fromDate) && (toDate === "" || customer.createDatefilter <= toDate);
-
-    return isCollectorMatch && isDateInRange;
+      const isStatusMatch =
+    selectedStatus === "" || customer.status === selectedStatus;
+    return isCollectorMatch && isDateInRange && isStatusMatch;
   });
 
 
-  
   
   const handleDownloadPDF = async () => {
     const modalContent = document.getElementById('payment-modal-content');
@@ -193,30 +198,43 @@ function Customers() {
       // Create a new PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
   
-      // Add a title to the PDF
-      pdf.setFontSize(18);
-      pdf.text('Customer Payments Report', 10, 20);
-      // Add customer details
-      const customerid = generateNumericHash(selectedCustomerId);
-      pdf.setFontSize(12);
-      pdf.text(`Customer ID: ${customerid}`, 10, 30);
-      pdf.text(`Status: ${diffInMonths === 0 ? 'Active' : diffInMonths === 1 ? 'Unactive' : 'Defaulter'}`, 10, 40);
-  
       // Calculate image dimensions
-      const maxWidth = 190; // Max width for the image (210mm - 20mm margins)
+      const pageWidth = pdf.internal.pageSize.getWidth(); // A4 page width (210mm)
+      const pageHeight = pdf.internal.pageSize.getHeight(); // A4 page height (297mm)
+      const margin = 5; // Margin on all sides
+      const maxWidth = pageWidth - 2 * margin; // Max width for the image (210mm - 20mm margins)
       const imgWidth = maxWidth; // Use the maximum width
       const imgHeight = (canvas.height * imgWidth) / canvas.width; // Calculate height based on aspect ratio
   
-      // Add the image to the PDF (starting below the title and details)
-      pdf.addImage(imgData, 'PNG', 10, 50, imgWidth, imgHeight);
+      // Add the image to the PDF at the top (starting from the margin)
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+  
+      // If the image height is too large for a single page, split it across multiple pages
+      let remainingHeight = imgHeight;
+      let yPosition = margin; // Start from the top margin
+  
+      while (remainingHeight > 0) {
+        if (yPosition + remainingHeight > pageHeight - margin) {
+          // Add a new page
+          pdf.addPage();
+          yPosition = margin; // Reset yPosition for the new page
+        }
+  
+        // Add the remaining part of the image
+        pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, remainingHeight, undefined, 'FAST');
+        remainingHeight -= (pageHeight - margin - yPosition); // Subtract the height added to the current page
+        yPosition = margin; // Reset yPosition for the next iteration
+      }
   
       // Download the PDF
+      const customerid = generateNumericHash(selectedCustomerId);
       pdf.save(`customer_payments_${customerid}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
     }
   };
+
   const exportToExcel = () => {
     if (filteredCustomers.length === 0) {
       alert("No data available to export!");
@@ -225,7 +243,7 @@ function Customers() {
   
     // Prepare the data for the Excel file
     const data = filteredCustomers.map((customer) => ({
-      "Customer ID": customer.customerId,
+      "Customer ID": generateNumericHash(customer.customerId) ,
       "Name": customer.name,
       "Username": customer.username,
       "Contact Number": customer.contactNumber,
@@ -342,7 +360,8 @@ function Customers() {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [fetchCustomers]);
+
 
   const handleViewPayments = async (customerId: string, selectedPackage: string, diffInMonths: number) => {
     setSelectedCustomerId(customerId);
@@ -351,12 +370,34 @@ function Customers() {
     setErrorPayments(null);
   
     try {
-      // Fetch package price
-      const packageDoc = await getDoc(doc(firestore, "packages", selectedPackage));
-      const packagePrice = packageDoc.data()?.price || 0; // Default to 0 if price is missing
+      // Fetch customer details
+      const customerDoc = await getDoc(doc(firestore, "customers", customerId));
+      if (customerDoc.exists()) {
+        const customerData = customerDoc.data() as Customer;
+  
+        // Fetch package details
+        const packageDoc = await getDoc(doc(firestore, "packages", customerData.selectedPackage));
+        const packageData = packageDoc.data();
+        const packageName = packageData?.name || "N/A"; // Get package name
+        const packagePrice = packageData?.price || 0; // Get package price
+  
+        // Update customer details with package name and price
+        const updatedCustomerData = {
+          ...customerData,
+          packageName,
+          packagePrice,
+        };
+  
+        setCustomerDetails(updatedCustomerData); // Store updated customer details
+      } else {
+        console.warn("Customer not found.");
+      }
   
       // Fetch payments
-      const paymentsQuery = query(collection(firestore, "payments"), where("customerId", "==", parseInt(generateNumericHash(customerId))));
+      const paymentsQuery = query(
+        collection(firestore, "payments"),
+        where("customerId", "==", parseInt(generateNumericHash(customerId)))
+      );
       const snapshot = await getDocs(paymentsQuery);
   
       // Fetch collectors
@@ -404,6 +445,67 @@ function Customers() {
       setLoadingPayments(false);
     }
   };
+
+  // const handleViewPayments = async (customerId: string, selectedPackage: string, diffInMonths: number) => {
+  //   setSelectedCustomerId(customerId);
+  //   setIsModalOpen(true);
+  //   setLoadingPayments(true);
+  //   setErrorPayments(null);
+  
+  //   try {
+  //     // Fetch package price
+  //     const packageDoc = await getDoc(doc(firestore, "packages", selectedPackage));
+  //     const packagePrice = packageDoc.data()?.price || 0; // Default to 0 if price is missing
+  
+  //     // Fetch payments
+  //     const paymentsQuery = query(collection(firestore, "payments"), where("customerId", "==", parseInt(generateNumericHash(customerId))));
+  //     const snapshot = await getDocs(paymentsQuery);
+  
+  //     // Fetch collectors
+  //     const collectorsSnapshot = await getDocs(collection(firestore, "collectors"));
+  //     const collectorsData: { [key: string]: string } = {};
+  //     collectorsSnapshot.forEach((doc) => {
+  //       collectorsData[doc.id] = doc.data().name; // Store collector name by userId
+  //     });
+  
+  //     // Map payments data and fetch collector names
+  //     const paymentsData: Payment[] = await Promise.all(
+  //       snapshot.docs.map(async (doc) => {
+  //         const payment = doc.data();
+  //         const collectorName = collectorsData[payment.userId] || "Unknown"; // Get collector name from collectorsData
+  
+  //         return {
+  //           id: doc.id,
+  //           amount: payment.amount as number,
+  //           customerName: payment.customerName as string,
+  //           collectorName, // Set collector name
+  //           paymentDate: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0],
+  //         };
+  //       })
+  //     );
+  
+  //     // Calculate total amount of payments
+  //     const totalPaymentsAmount = paymentsData.reduce((sum, payment) => sum + payment.amount, 0);
+  
+  //     // Calculate total amount (packagePrice * diffInMonths)
+  //     const totalAmount = packagePrice * diffInMonths;
+  
+  //     // Set state
+  //     setPayments(paymentsData);
+  //     setPackagePrice(packagePrice); // Store package price
+  //     setTotalAmount(totalAmount); // Store total amount
+  //     setTotalPaymentsAmount(totalPaymentsAmount); // Store total payments amount
+  //     setDiffInMonths(diffInMonths); // Store diffInMonths
+  //   } catch (error: unknown) {
+  //     if (error instanceof Error) {
+  //       setErrorPayments(error.message);
+  //     } else {
+  //       setErrorPayments("An unknown error occurred.");
+  //     }
+  //   } finally {
+  //     setLoadingPayments(false);
+  //   }
+  // };
   const handleCheckboxChange = (id: string) => {
     setSelectedCustomers((prev) => {
       const updatedSet = new Set(prev);
@@ -454,7 +556,7 @@ function Customers() {
         customer={selectedCustomerForEdit}
         onSave={handleSave}
       />
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-5 gap-4 mb-4">
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector/Customer</label>
           <input
@@ -484,6 +586,19 @@ function Customers() {
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
           />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Status</label>
+          <select
+    value={selectedStatus}
+    onChange={(e) => setSelectedStatus(e.target.value)}
+    className="p-2 border border-gray-300 rounded"
+  >
+    <option value="">All</option>
+    <option value="Active">Active</option>
+    <option value="Unactive">Unactive</option>
+    <option value="Defaulter">Defaulter</option>
+  </select>
         </div>
 
        <div className="flex items-end"> {/* Added for the Download button */}
@@ -644,10 +759,38 @@ function Customers() {
         Download PDF
       </button>
 
+      {/* Customer Details */}
+      {customerDetails && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2">Customer Payments Report</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p><strong>Name:</strong> {customerDetails.name}</p>
+              <p><strong>Phone:</strong> {customerDetails.contactNumber}</p>
+              <p><strong>Address:</strong> {customerDetails.completeAddress}</p>
+            </div>
+            <div>
+              <p>
+              <strong>Status:</strong> {diffInMonths === 0 ? 'Active' : diffInMonths === 1 ? 'Unactive' : 'Defaulter'}
+              </p>
+              <p>
+              <strong>Package Name:</strong> {customerDetails.packageName} {customerDetails.discount} % off
+              </p>
+            <p>
+  <strong>Package:</strong>  (PKR {customerDetails.packagePrice} x {customerDetails.device} = PKR {customerDetails.packagePrice * customerDetails.device} - {customerDetails.discount}% = PKR {customerDetails.finalPrice})
+</p>
+              {/* <p><strong>Collector:</strong> {customerDetails.collectorName}</p> */}
+              {/* <p><strong>Join Date:</strong> {customerDetails.createDate}</p> */}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rest of the modal content */}
-      <h2 className="text-xl font-bold mb-4 ignore-in-pdf">
+      {/* <h2 className="text-xl font-bold mb-4 ignore-in-pdf">
         Payments for Customer ID: {selectedCustomerId ? generateNumericHash(selectedCustomerId) : "N/A"}
-      </h2>
+      </h2> */}
+
       {/* Status Alert */}
       {diffInMonths === 0 && (
         <div className="bg-green-500 text-white px-4 py-2 rounded mb-4 ignore-in-pdf">
@@ -655,13 +798,13 @@ function Customers() {
         </div>
       )}
       {diffInMonths === 1 && (
-        <div className="bg-yellow-500 text-white px-4 py-2 rounded mb-4">
+        <div className="bg-yellow-500 text-white px-4 py-2 rounded mb-4 ignore-in-pdf">
           Status: Unactive <hr />
           {packagePrice} x {diffInMonths} = {totalAmount}
         </div>
       )}
       {diffInMonths > 1 && (
-        <div className="bg-red-500 text-white px-4 py-2 rounded mb-4">
+        <div className="bg-red-500 text-white px-4 py-2 rounded mb-4 ignore-in-pdf">
           Status: Defaulter <hr />
           {packagePrice} x {diffInMonths} = {packagePrice * diffInMonths}
         </div>
@@ -710,6 +853,11 @@ function Customers() {
     </div>
   </div>
 )}
+
+
+
+
+
         </div>
       )}
     </div>

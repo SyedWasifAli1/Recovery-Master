@@ -28,6 +28,8 @@ interface Customer {
   finalPrice: number;
   selectedCollector: string;
   collectorName: string;
+  packageName: string;
+  packagePrice: number;
 }
 
 interface EditCustomerModalProps {
