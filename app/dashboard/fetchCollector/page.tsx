@@ -275,7 +275,7 @@ const CollectorsListPage = () => {
                   }
                 />
               </div>
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Email</label>
                 <input
                   type="email"
@@ -285,7 +285,7 @@ const CollectorsListPage = () => {
                     setEditingCollector({ ...editingCollector, email: e.target.value })
                   }
                 />
-              </div>
+              </div> */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Contact Number</label>
                 <input

@@ -10,8 +10,11 @@ import * as XLSX from "xlsx";
 interface Payment {
   id: string;
   amount: number;
+  remainingAmount: number;
+  totalAmount: number;
   customerName: string;
   collectorName: string;
+  BusinessName:string;
   paymentDate: string;
   paymentDatefilter: string;
 }
@@ -67,11 +70,26 @@ const Payments = () => {
               collectorName = collectorDocSnap.data().name || "Unknown";
             }
           }
+          let customerName = "Unknown";
+          let BusinessName = "Unknown";
+          if (payment.userId) {
+            const collectorDocRef = doc(firestore, "customers", payment.customerId);
+            const collectorDocSnap = await getDoc(collectorDocRef);
+
+            if (collectorDocSnap.exists()) {
+              customerName = collectorDocSnap.data().name || "Unknown";
+              BusinessName = collectorDocSnap.data().username || "Unknown";
+            }
+          }
 
           return {
             id: paymentDoc.id,
             amount: payment.amount,
-            customerName: payment.customerName,
+            remainingAmount:payment.remainingamount,
+            totalAmount:payment.totalamount,
+            customerName: customerName,
+            BusinessName: BusinessName,
+
             collectorName,
             paymentDatefilter:formatFirestoreDatefilter(payment.paymentDate),
             // paymentDatefilter: new Date(payment.paymentDate.seconds * 1000).toISOString().split("T")[0],
@@ -105,7 +123,9 @@ const Payments = () => {
   });
 
   // ✅ Calculate total amount of filtered payments
-  const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.totalAmount, 0);
+  const balance = filteredPayments.reduce((sum, payment) => sum + payment.remainingAmount, 0);
+  const collected = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   const exportToExcel = () => {
     if (filteredPayments.length === 0) {
@@ -116,7 +136,9 @@ const Payments = () => {
      const data = filteredPayments.map((payment) => ({
        "Collector Name": payment.collectorName,
        "Customer Name": payment.customerName,
-       "Amount": payment.amount,
+       "Total Amount": payment.totalAmount,
+       "Balance": payment.remainingAmount,
+       "Collected": payment.amount,
        "Payment Date": payment.paymentDate,
      }));
    
@@ -136,7 +158,7 @@ const Payments = () => {
       <h1 className="text-2xl font-bold text-center mb-4">All Payments</h1>
 
       {/* ✅ Filter Inputs */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-4 gap-4 mb-4">
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector/Customer</label>
           <input
@@ -167,32 +189,44 @@ const Payments = () => {
             onChange={(e) => setToDate(e.target.value)}
           />
         </div>
-      </div>
-
-      {/* ✅ Total Amount Display */}
-      <div className="text-lg font-semibold mb-2">
-        Total Amount: <span className="text-blue-600">PKR {totalAmount.toLocaleString()}</span>
-      </div>
-
-      {/* ✅ Convert to Excel Button */}
-      <button
+        <div className="flex flex-end">
+        <button
         onClick={exportToExcel}
-        className="mb-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
+        className="mt-6 px-4 py-2 bg-green-500 text-white w-full flex items-center justify-center rounded hover:bg-green-600 transition"
+        // className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
       >
         Download
       </button>
+        </div>
+      </div>
+
+      {/* ✅ Total Amount Display */}
+      <div className="flex flex-wrap items-center gap-4 text-lg font-semibold mb-2">
+  <div>
+    Total Amount: <span className="text-blue-600">PKR {totalAmount.toLocaleString()}</span>
+  </div>
+  <div>
+    Collected: <span className="text-blue-600">PKR {collected.toLocaleString()}</span>
+  </div>
+  <div>
+    Balance: <span className="text-blue-600">PKR {balance.toLocaleString()}</span>
+  </div>
+</div>
 
       {loading ? (
         <p className="text-center">Loading...</p>
       ) : (
         <div className="overflow-x-auto border border-gray-300 rounded-lg">
-          <div className="max-h-[330px] overflow-y-auto">
+          <div className="max-h-[250px] overflow-y-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-blue-500 text-white">
                   <th className="p-3 border">Collector Name</th>
                   <th className="p-3 border">Customer Name</th>
-                  <th className="p-3 border">Amount (PKR)</th>
+                  <th className="p-3 border">Business Name</th>
+                  <th className="p-3 border">Total Amount</th>
+                  <th className="p-3 border">Balance </th>
+                  <th className="p-3 border">Collected </th>
                   <th className="p-3 border">Payment Date</th>
                 </tr>
               </thead>
@@ -202,6 +236,9 @@ const Payments = () => {
                     <tr key={payment.id} className="bg-gray-100 border">
                       <td className="p-3 border">{payment.collectorName}</td>
                       <td className="p-3 border">{payment.customerName}</td>
+                      <td className="p-3 border">{payment.BusinessName}</td>
+                      <td className="p-3 border">{payment.totalAmount}</td>
+                      <td className="p-3 border">{payment.remainingAmount}</td>
                       <td className="p-3 border">{payment.amount.toLocaleString()}</td>
                       <td className="p-3 border">{payment.paymentDate}</td>
                     </tr>

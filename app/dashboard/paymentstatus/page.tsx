@@ -6,8 +6,8 @@ import { firestore } from "../../lib/firebase-config";
 import withAuth from "@/app/lib/withauth";
 import crypto from "crypto";
 import Loader from "@/components/loader";
-import { FiDownload } from "react-icons/fi";
-import * as XLSX from "xlsx";
+// import { FiDownload } from "react-icons/fi";
+// import * as XLSX from "xlsx";
 import EditCustomerModal from "@/components/editcustomers";
 import jsPDF from 'jspdf';
   import html2canvas from 'html2canvas';
@@ -47,8 +47,8 @@ interface Payment {
 
 function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
+  // const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
+  // const [selectAll, setSelectAll] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null >(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -60,8 +60,8 @@ function Customers() {
   const [diffInMonths, setDiffInMonths] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true); 
   const [searchCollector, setSearchCollector] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  // const [fromDate, setFromDate] = useState("");
+  // const [toDate, setToDate] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState<Customer | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -170,11 +170,12 @@ function Customers() {
     customer.name.toLowerCase().includes(searchCollector.toLowerCase());
 
 
-    const isDateInRange =
-      (fromDate === "" || customer.createDatefilter >= fromDate) && (toDate === "" || customer.createDatefilter <= toDate);
+    // const isDateInRange =
+    //   (fromDate === "" || customer.createDatefilter >= fromDate) && (toDate === "" || customer.createDatefilter <= toDate);
+    
       const isStatusMatch =
     selectedStatus === "" || customer.status === selectedStatus;
-    return isCollectorMatch && isDateInRange && isStatusMatch;
+    return isCollectorMatch  && isStatusMatch;
   });
 
 
@@ -235,48 +236,48 @@ function Customers() {
     }
   };
 
-  const exportToExcel = () => {
-    if (filteredCustomers.length === 0) {
-      alert("No data available to export!");
-      return;
-    }
+  // const exportToExcel = () => {
+  //   if (filteredCustomers.length === 0) {
+  //     alert("No data available to export!");
+  //     return;
+  //   }
   
-    // Prepare the data for the Excel file
-    const data = filteredCustomers.map((customer) => ({
-      "Customer ID": generateNumericHash(customer.customerId) ,
-      "Name": customer.name,
-      "Username": customer.username,
-      "Contact Number": customer.contactNumber,
-      "Complete Address": customer.completeAddress,
-      "Create Date": customer.createDate,
-      // "Create Date (Filter)": customer.createDatefilter,
-      "Status": customer.status,
-      "Months Difference": customer.diffInMonths,
-      // "Selected Package": customer.selectedPackage,
-      "Area": customer.area,
-      "Category": customer.category,
-      "City": customer.city,
-      "Discount (%)": customer.discount,
-      "Device": customer.device,
-      "Final Price": `Rs. ${customer.finalPrice.toFixed(2)}`,
-      // "Selected Collector": customer.selectedCollector,
-      "Collector Name": customer.collectorName,
-    }));
+  //   // Prepare the data for the Excel file
+  //   const data = filteredCustomers.map((customer) => ({
+  //     "Customer ID": generateNumericHash(customer.customerId) ,
+  //     "Name": customer.name,
+  //     "Username": customer.username,
+  //     "Contact Number": customer.contactNumber,
+  //     "Complete Address": customer.completeAddress,
+  //     "Create Date": customer.createDate,
+  //     // "Create Date (Filter)": customer.createDatefilter,
+  //     "Status": customer.status,
+  //     "Months Difference": customer.diffInMonths,
+  //     // "Selected Package": customer.selectedPackage,
+  //     "Area": customer.area,
+  //     "Category": customer.category,
+  //     "City": customer.city,
+  //     "Discount (%)": customer.discount,
+  //     "Device": customer.device,
+  //     "Final Price": `Rs. ${customer.finalPrice.toFixed(2)}`,
+  //     // "Selected Collector": customer.selectedCollector,
+  //     "Collector Name": customer.collectorName,
+  //   }));
   
-    // Create a worksheet from the data
-    const worksheet = XLSX.utils.json_to_sheet(data);
+  //   // Create a worksheet from the data
+  //   const worksheet = XLSX.utils.json_to_sheet(data);
   
-    // Auto-fit columns for better visibility
-    const columnWidths = Object.keys(data[0]).map((key) => ({ wch: key.length + 5 }));
-    worksheet["!cols"] = columnWidths;
+  //   // Auto-fit columns for better visibility
+  //   const columnWidths = Object.keys(data[0]).map((key) => ({ wch: key.length + 5 }));
+  //   worksheet["!cols"] = columnWidths;
   
-    // Create a workbook and add the worksheet
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+  //   // Create a workbook and add the worksheet
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
   
-    // Write the workbook to a file and trigger the download
-    XLSX.writeFile(workbook, "Customers.xlsx");
-  };
+  //   // Write the workbook to a file and trigger the download
+  //   XLSX.writeFile(workbook, "Customers.xlsx");
+  // };
   
 
 
@@ -306,16 +307,32 @@ function Customers() {
                 : new Date(data.lastpay);
             const currentDate = new Date();
   
+          //   diffInMonths =
+          //     (currentDate.getFullYear() - lastPayDate.getFullYear()) * 12 +
+          //     (currentDate.getMonth() - lastPayDate.getMonth());
+          //   console.log("monthsDifference:", diffInMonths);
+          //   if (diffInMonths > 1) {
+          //     status = "Defaulter";
+          //   } else if (diffInMonths === 1) {
+          //     status = "Unactive";
+          //   } else {
+          //     status = "Active";
+          //   }
+          // } else {
+          //   console.warn(`Customer ${customerDoc.id} has no lastPay field.`);
+          // }
+  
+  
             diffInMonths =
               (currentDate.getFullYear() - lastPayDate.getFullYear()) * 12 +
               (currentDate.getMonth() - lastPayDate.getMonth());
             console.log("monthsDifference:", diffInMonths);
             if (diffInMonths > 1) {
-              status = "Defaulter";
+              status = "Pending";
             } else if (diffInMonths === 1) {
-              status = "Unactive";
+              status = "Pending";
             } else {
-              status = "Active";
+              status = "Collected";
             }
           } else {
             console.warn(`Customer ${customerDoc.id} has no lastPay field.`);
@@ -501,36 +518,36 @@ function Customers() {
   //     setLoadingPayments(false);
   //   }
   // };
-  const handleCheckboxChange = (id: string) => {
-    setSelectedCustomers((prev) => {
-      const updatedSet = new Set(prev);
-      if (updatedSet.has(id)) {
-        updatedSet.delete(id);
-      } else {
-        updatedSet.add(id);
-      }
-      return updatedSet;
-    });
-  };
+  // const handleCheckboxChange = (id: string) => {
+  //   setSelectedCustomers((prev) => {
+  //     const updatedSet = new Set(prev);
+  //     if (updatedSet.has(id)) {
+  //       updatedSet.delete(id);
+  //     } else {
+  //       updatedSet.add(id);
+  //     }
+  //     return updatedSet;
+  //   });
+  // };
 
-  const handleSelectAll = () => {
-    setSelectedCustomers(selectAll ? new Set() : new Set(customers.map((customer) => customer.customerId)));
-    setSelectAll((prev) => !prev);
-  };
+  // const handleSelectAll = () => {
+  //   setSelectedCustomers(selectAll ? new Set() : new Set(customers.map((customer) => customer.customerId)));
+  //   setSelectAll((prev) => !prev);
+  // };
 
-  const handleDeleteSelected = async () => {
-    try {
-      await Promise.all(
-        Array.from(selectedCustomers).map((id) => deleteDoc(doc(firestore, "customers", id)))
-      );
+  // const handleDeleteSelected = async () => {
+  //   try {
+  //     await Promise.all(
+  //       Array.from(selectedCustomers).map((id) => deleteDoc(doc(firestore, "customers", id)))
+  //     );
 
-      setCustomers((prev) => prev.filter((customer) => !selectedCustomers.has(customer.customerId)));
-      setSelectedCustomers(new Set());
-      alert("Selected customers deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting selected customers:", error);
-    }
-  };
+  //     setCustomers((prev) => prev.filter((customer) => !selectedCustomers.has(customer.customerId)));
+  //     setSelectedCustomers(new Set());
+  //     alert("Selected customers deleted successfully.");
+  //   } catch (error) {
+  //     console.error("Error deleting selected customers:", error);
+  //   }
+  // };
 
   const handleDelete = async (id: string) => {
     try {
@@ -544,14 +561,14 @@ function Customers() {
 
   return (
     <div className="h-[80vh] text-black p-8">
-      <h2 className="text-2xl font-bold mb-4">Customers</h2>
+      <h2 className="text-2xl font-bold mb-4">Payments Status</h2>
       <EditCustomerModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         customer={selectedCustomerForEdit}
         onSave={handleSave}
       />
-      <div className="grid grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector/Customer</label>
           <input
@@ -563,7 +580,7 @@ function Customers() {
           />
         </div>
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">From Date</label>
           <input
             type="date"
@@ -581,7 +598,7 @@ function Customers() {
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
           />
-        </div>
+        </div> */}
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Status</label>
           <select
@@ -590,22 +607,23 @@ function Customers() {
     className="p-2 border border-gray-300 rounded"
   >
     <option value="">All</option>
-    <option value="Active">Active</option>
-    <option value="Unactive">Unactive</option>
-    <option value="Defaulter">Defaulter</option>
+    <option value="Pending">Pending</option>
+    <option value="Collected">Collected</option>
+    {/* <option value="Defaulter">Defaulter</option> */}
   </select>
         </div>
 
-       <div className="flex items-end"> {/* Added for the Download button */}
+       {/* <div className="flex items-end">
          <button
          onClick={exportToExcel}
          className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
        >
          <FiDownload className="w-5 h-5 mr-2" /> 
-         Download {/* Optional text */}
+         Download 
        </button>
         
-      </div>
+      </div> */}
+      
       </div>
       {loading ? ( // Show loader while fetching
       <Loader />
@@ -614,46 +632,64 @@ function Customers() {
     ) : (
 
         <div>
-          <div className="mb-4 flex items-center">
+          {/* <div className="mb-4 flex items-center">
             <input type="checkbox" checked={selectAll} onChange={handleSelectAll} className="mr-2" />
             <button onClick={handleDeleteSelected} className="bg-red-500 text-white px-4 py-2 rounded">
               Delete Selected
             </button>
-          </div>
+          </div> */}
           <div className="overflow-x-auto max-h-[400px]">
   <div className="inline-block min-w-full">
   <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
   <thead>
     <tr className="bg-red-500 text-white text-left">
-      <th className="border border-gray-700 px-4 py-2">
+      {/* <th className="border border-gray-700 px-4 py-2">
         <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
       </th>
+       */}
       <th className="border border-gray-700 px-4 py-2">Customer Id</th>
       <th className="border border-gray-700 px-4 py-2">Customer Name</th>
-      <th className="border border-gray-700 px-4 py-2">Business Name</th>
+
       <th className="border border-gray-700 px-4 py-2">Contact</th>
-      <th className="border border-gray-700 px-4 py-2">Address</th>
+      
+      <th className="border border-gray-700 px-4 py-2">Business Name</th>
+      <th className="border border-gray-700 px-4 py-2">Collector Name</th>
+      <th className="border border-gray-700 px-4 py-2">Payment Status</th>
+      {/* <th className="border border-gray-700 px-4 py-2">Address</th>
       <th className="border border-gray-700 px-4 py-2">Area</th>
       <th className="border border-gray-700 px-4 py-2">Category</th>
       <th className="border border-gray-700 px-4 py-2">City</th>
-      <th className="border border-gray-700 px-4 py-2">Number Of Device</th>
-      <th className="border border-gray-700 px-4 py-2">Created Date</th>
-      <th className="border border-gray-700 px-4 py-2">Discount</th>
-      <th className="border border-gray-700 px-4 py-2">Final Price</th>
-      <th className="border border-gray-700 px-4 py-2">Collector Name</th>
-      <th className="border border-gray-700 px-4 py-2">Status</th>
-      <th className="border border-gray-700 px-4 py-2">Actions</th>
+      <th className="border border-gray-700 px-4 py-2">Number Of Device</th> */}
+      {/* <th className="border border-gray-700 px-4 py-2">Created Date</th> */}
+      {/* <th className="border border-gray-700 px-4 py-2">Discount</th> */}
+      {/* <th className="border border-gray-700 px-4 py-2">Final Price</th> */}
+      
+      {/* <th className="border border-gray-700 px-4 py-2">Status</th> */}
+      {/* <th className="border border-gray-700 px-4 py-2">Actions</th> */}
     </tr>
   </thead>
   <tbody>
     {filteredCustomers.map((customer) => (
       <tr key={customer.customerId} className="hover:bg-gray-100">
-        <td className="border border-gray-700 px-4 py-2">
+        {/* <td className="border border-gray-700 px-4 py-2">
           <input
             type="checkbox"
             checked={selectedCustomers.has(customer.customerId)}
             onChange={() => handleCheckboxChange(customer.customerId)}
           />
+        </td> */}
+        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+          <span
+            className={`px-2 py-1 rounded-sm text-white ${
+              customer.status === "Collected"
+                ? "bg-green-500"
+                : customer.status === "Pending"
+                ? "bg-yellow-500"
+                : "bg-yellow-500"
+            }`}
+          >
+            {customer.status}
+          </span>
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {generateNumericHash(customer.customerId)}
@@ -667,7 +703,7 @@ function Customers() {
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.contactNumber}
         </td>
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+        {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.completeAddress}
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
@@ -681,20 +717,21 @@ function Customers() {
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.device}
-        </td>
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+        </td> */}
+        {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.createDate}
         </td>
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+         */}
+        {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.discount}
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.finalPrice}
-        </td>
+        </td> */}
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.collectorName}
         </td>
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+        {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           <span
             className={`px-2 py-1 rounded-sm text-white ${
               customer.status === "Active"
@@ -706,7 +743,7 @@ function Customers() {
           >
             {customer.status}
           </span>
-        </td>
+        </td> */}
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           <button
             onClick={() => handleDelete(customer.customerId)}
@@ -760,9 +797,7 @@ function Customers() {
           <h2 className="text-xl font-bold mb-2">Customer Payments Report</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p><strong>ID:</strong> {generateNumericHash(selectedCustomerId)}</p>
               <p><strong>Name:</strong> {customerDetails.name}</p>
-              <p><strong>Business Name:</strong> {customerDetails.username}</p>
               <p><strong>Phone:</strong> {customerDetails.contactNumber}</p>
               <p><strong>Address:</strong> {customerDetails.completeAddress}</p>
             </div>
@@ -825,19 +860,19 @@ function Customers() {
             <table className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-200">
-                  <th className="border border-gray-300 px-4 py-2">Collector Name</th>
-                  {/* <th className="border border-gray-300 px-4 py-2">Customer Name</th> */}
-                  <th className="border border-gray-300 px-4 py-2">Payment Date</th>
                   <th className="border border-gray-300 px-4 py-2">Amount</th>
+                  <th className="border border-gray-300 px-4 py-2">Customer Name</th>
+                  <th className="border border-gray-300 px-4 py-2">Collector Name</th>
+                  <th className="border border-gray-300 px-4 py-2">Payment Date</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-100">
-                    <td className="border border-gray-300 px-4 py-2">{payment.collectorName}</td>
-                    {/* <td className="border border-gray-300 px-4 py-2">{payment.customerName}</td> */}
-                    <td className="border border-gray-300 px-4 py-2">{payment.paymentDate}</td>
                     <td className="border border-gray-300 px-4 py-2">{payment.amount}</td>
+                    <td className="border border-gray-300 px-4 py-2">{payment.customerName}</td>
+                    <td className="border border-gray-300 px-4 py-2">{payment.collectorName}</td>
+                    <td className="border border-gray-300 px-4 py-2">{payment.paymentDate}</td>
                   </tr>
                 ))}
               </tbody>
