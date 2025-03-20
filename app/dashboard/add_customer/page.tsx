@@ -134,6 +134,8 @@ const AddCustomerPage = () => {
         discount,
         device,
         finalPrice,
+        lastPaid:0,
+        remainingamount:0,
         createDate: currentDate,
         lastpay: lastPayDate,
       };
@@ -228,6 +230,8 @@ const AddCustomerPage = () => {
               discount,
               device,
               finalPrice,
+              lastPaid:0,
+              remainingamount:0,
               createDate: currentDate,
               lastpay: lastPayDate,
             };
@@ -269,6 +273,7 @@ const AddCustomerPage = () => {
       discount: "",
       device:"",
       finalPrice: "",
+      
       createDate: "",
       lastpay: "",
     }];

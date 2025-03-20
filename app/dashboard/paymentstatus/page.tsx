@@ -62,50 +62,50 @@ function Customers() {
   const [searchCollector, setSearchCollector] = useState("");
   // const [fromDate, setFromDate] = useState("");
   // const [toDate, setToDate] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState<Customer | null>(null);
+  // const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState<Customer | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
 
 
-  const handleEdit = (customer: Customer) => {
-    setSelectedCustomerForEdit(customer);
-    setIsEditModalOpen(true);
-  };
+  // const handleEdit = (customer: Customer) => {
+  //   setSelectedCustomerForEdit(customer);
+  //   setIsEditModalOpen(true);
+  // };
 
-  const handleSave = async (updatedCustomer: Customer) => {
-    try {
-      const customerRef = doc(firestore, "customers", updatedCustomer.customerId);
+  // const handleSave = async (updatedCustomer: Customer) => {
+  //   try {
+  //     const customerRef = doc(firestore, "customers", updatedCustomer.customerId);
   
-      // Extract only the fields you want to update
-      const updateData = {
-        name: updatedCustomer.name,
-        username: updatedCustomer.username,
-        contactNumber: updatedCustomer.contactNumber,
-        completeAddress: updatedCustomer.completeAddress,
-        area: updatedCustomer.area,
-        category: updatedCustomer.category,
-        city: updatedCustomer.city,
-        device: updatedCustomer.device,
-        discount: updatedCustomer.discount,
-        finalPrice: updatedCustomer.finalPrice,
-      };
+  //     // Extract only the fields you want to update
+  //     const updateData = {
+  //       name: updatedCustomer.name,
+  //       username: updatedCustomer.username,
+  //       contactNumber: updatedCustomer.contactNumber,
+  //       completeAddress: updatedCustomer.completeAddress,
+  //       area: updatedCustomer.area,
+  //       category: updatedCustomer.category,
+  //       city: updatedCustomer.city,
+  //       device: updatedCustomer.device,
+  //       discount: updatedCustomer.discount,
+  //       finalPrice: updatedCustomer.finalPrice,
+  //     };
   
-      await updateDoc(customerRef, updateData);
+  //     await updateDoc(customerRef, updateData);
   
-      // Update the local state
-      setCustomers((prev) =>
-        prev.map((customer) =>
-          customer.customerId === updatedCustomer.customerId ? updatedCustomer : customer
-        )
-      );
+  //     // Update the local state
+  //     setCustomers((prev) =>
+  //       prev.map((customer) =>
+  //         customer.customerId === updatedCustomer.customerId ? updatedCustomer : customer
+  //       )
+  //     );
   
-      setIsEditModalOpen(false);
-      alert("Customer updated successfully.");
-    } catch (error) {
-      console.error("Error updating customer:", error);
-    }
-  };
+  //     setIsEditModalOpen(false);
+  //     alert("Customer updated successfully.");
+  //   } catch (error) {
+  //     console.error("Error updating customer:", error);
+  //   }
+  // };
   const formatFirestoreDate = (timestamp: Timestamp | string | undefined): string => {
     if (!timestamp) return "Unknown";
 
@@ -562,12 +562,12 @@ function Customers() {
   return (
     <div className="h-[80vh] text-black p-8">
       <h2 className="text-2xl font-bold mb-4">Payments Status</h2>
-      <EditCustomerModal
+      {/* <EditCustomerModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         customer={selectedCustomerForEdit}
         onSave={handleSave}
-      />
+      /> */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector/Customer</label>
@@ -744,7 +744,7 @@ function Customers() {
             {customer.status}
           </span>
         </td> */}
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+        {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           <button
             onClick={() => handleDelete(customer.customerId)}
             className="bg-red-500 text-white px-4 py-2 rounded mr-2"
@@ -763,7 +763,7 @@ function Customers() {
           >
             View Payments
           </button>
-        </td>
+        </td> */}
       </tr>
     ))}
   </tbody>
