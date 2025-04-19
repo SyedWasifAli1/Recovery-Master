@@ -167,7 +167,8 @@ function Customers() {
     const isCollectorMatch =
     searchCollector === "" || 
     customer.collectorName.toLowerCase().includes(searchCollector.toLowerCase()) ||
-    customer.name.toLowerCase().includes(searchCollector.toLowerCase());
+    customer.name.toLowerCase().includes(searchCollector.toLowerCase()) ||
+    customer.category.toLowerCase().includes(searchCollector.toLowerCase());
 
 
     const isDateInRange =

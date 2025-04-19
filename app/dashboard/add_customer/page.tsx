@@ -84,14 +84,18 @@ const AddCustomerPage = () => {
     if (selectedPackage) {
       const selectedPkg = packages.find((pkg) => pkg.id === selectedPackage);
       if (selectedPkg) {
-      const selectedPkg_device = selectedPkg.price * device;
-
-        // const finalPrice = selectedPkg.price - (selectedPkg.price * discount) / 100;
-        const finalPrice = selectedPkg_device - (selectedPkg.price * discount) / 100;
+        // Calculate the price after applying the device multiplier
+        const selectedPkgDevicePrice = selectedPkg.price * device;
+        
+        // Apply the discount percentage
+        const finalPrice = selectedPkgDevicePrice - (selectedPkgDevicePrice * discount) / 100;
+        
+        // Set the final price
         setFinalPrice(finalPrice);
       }
     }
-  }, [selectedPackage, discount, packages,device]);
+  }, [selectedPackage, discount, packages, device]);
+  
 
   const validateInputs = () => {
     const newErrors: { [key: string]: string } = {};
@@ -165,126 +169,286 @@ const AddCustomerPage = () => {
     }
   };
 
-  const handleBulkUpload = async () => {
-    if (!bulkFile) {
-      alert("Please select a CSV file to upload.");
-      return;
-    }
-  
-    setIsLoading(true);
-    try {
-      Papa.parse(bulkFile, {
-        header: true,
-        complete: async (result) => {
-          const customers = result.data as Customer[];
-  
-          for (const customer of customers) {
-            const {
-              name,
-              username,
-              contactNumber,
-              completeAddress,
-              area,
-              city,
-              category,
-              selectedPackage,
-              selectedCollector,
-              discount,
-              device,
-              finalPrice,
-            } = customer;
-  
-            // Validate required fields
-            if (
-              !name ||
-              !username ||
-              !contactNumber ||
-              !completeAddress ||
-              !area ||
-              !city ||
-              !category ||
-              !selectedPackage ||
-              !selectedCollector ||
-              discount === undefined ||
-              device === undefined ||
-              finalPrice === undefined
-            ) {
-              console.warn("Skipping incomplete customer data:", customer);
-              continue;
-            }
-  
-            const currentDate = new Date();
-            const lastPayDate = new Date(currentDate);
-            lastPayDate.setMonth(lastPayDate.getMonth() - 1);
-  
-            const customerData = {
-              name,
-              username,
-              contactNumber,
-              completeAddress,
-              area,
-              city,
-              category,
-              selectedPackage,
-              selectedCollector,
-              discount,
-              device,
-              finalPrice,
-              lastPaid:0,
-              remainingamount:0,
-              createDate: currentDate,
-              lastpay: lastPayDate,
-            };
-  
-            await addDoc(collection(firestore, "customers"), customerData);
-          }
-  
-          alert("Bulk upload successful!");
-          setBulkFile(null);
-        },
-        error: (error) => {
-          console.error("Error parsing CSV:", error);
-          alert("Failed to upload CSV. Please check the file format.");
-        },
-      });
-    } catch (error) {
-      console.error("Error during bulk upload:", error);
-      alert("Failed to upload customers: " + error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleDownloadFormat = () => {
-    const headers = [
-      ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount","Device", "Final Price", "Create Date", "Last Pay"],
-    ];
+//   import Papa from "papaparse";
+// import { collection, addDoc } from "firebase/firestore";
+// import { firestore } from "@/lib/firebase";
 
-    const emptyRow = [{
-      name: "",
-      username: "",
-      contactNumber: "",
-      completeAddress: "",
-      area: "",
-      city: "",
-      category: "",
-      selectedPackage: "",
-      selectedCollector: "",
-      discount: "",
-      device:"",
-      finalPrice: "",
+
+const handleBulkUpload = async () => {
+  if (!bulkFile) {
+    alert("Please select an Excel file to upload.");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const customers: Customer[] = XLSX.utils.sheet_to_json(sheet);
+
+      for (const customer of customers) {
+        const {
+          name,
+          username,
+          contactNumber,
+          completeAddress,
+          area,
+          city,
+          category,
+          selectedPackage,
+          selectedCollector,
+          discount,
+          device,
+          finalPrice,
+        } = customer;
+
+        // Validate required fields
+        if (
+          !name ||
+          !username ||
+          !contactNumber ||
+          !completeAddress ||
+          !area ||
+          !city ||
+          !category ||
+          !selectedPackage ||
+          !selectedCollector ||
+          discount === undefined ||
+          device === undefined ||
+          finalPrice === undefined
+        ) {
+          console.warn("Skipping incomplete customer data:", customer);
+          continue;
+        }
+
+        const currentDate = new Date();
+        const lastPayDate = new Date(currentDate);
+        lastPayDate.setMonth(lastPayDate.getMonth() - 1);
+
+        const customerData = {
+          name,
+          username,
+          contactNumber,
+          completeAddress,
+          area,
+          city,
+          category,
+          selectedPackage,
+          selectedCollector,
+          discount,
+          device,
+          finalPrice,
+          lastPaid: 0,
+          remainingamount: 0,
+          createDate: currentDate.toISOString(),
+          lastpay: lastPayDate.toISOString(),
+        };
+
+        await addDoc(collection(firestore, "customers"), customerData);
+      }
+
+      alert("Bulk upload successful!");
+      setBulkFile(null);
+    };
+    reader.readAsArrayBuffer(bulkFile);
+  } catch (error) {
+    console.error("Error during bulk upload:", error);
+    alert("Failed to upload customers: " + error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const handleDownloadFormat = () => {
+  const headers = [
+    [
+      "Name",
+      "Username",
+      "Contact Number",
+      "Complete Address",
+      "Area",
+      "City",
+      "Category",
+      "Selected Package",
+      "Selected Collector",
+      "Discount",
+      "Device",
+      "Final Price",
+      "Create Date",
+      "Last Pay",
+    ],
+  ];
+
+  // 🔥 Demo Data
+  const demoData = [
+    {
+      name: "Ali Khan",
+      username: "ali123",
+      contactNumber: "03001234567",
+      completeAddress: "House #123, Street #4, Karachi",
+      area: "Gulshan",
+      city: "Karachi",
+      category: "Premium",
+      selectedPackage: "Gold",
+      selectedCollector: "Ahmed",
+      discount: 10,
+      device: 2,
+      finalPrice: 4500,
+      createDate: new Date().toISOString(),
+      lastpay: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+    },
+    {
+      name: "Sara Ahmed",
+      username: "sara786",
+      contactNumber: "03111234567",
+      completeAddress: "House #56, Street #2, Lahore",
+      area: "Johar Town",
+      city: "Lahore",
+      category: "Standard",
+      selectedPackage: "Silver",
+      selectedCollector: "Bilal",
+      discount: 5,
+      device: 1,
+      finalPrice: 1000,
+      createDate: new Date().toISOString(),
+      lastpay: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+    },
+  ];
+
+  const worksheet = XLSX.utils.json_to_sheet(demoData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
+  XLSX.writeFile(workbook, "Customer_Demo.xlsx");
+};
+
+
+
+  // const handleBulkUpload = async () => {
+  //   if (!bulkFile) {
+  //     alert("Please select a CSV file to upload.");
+  //     return;
+  //   }
+  
+  //   setIsLoading(true);
+  //   try {
+  //     Papa.parse(bulkFile, {
+  //       header: true,
+  //       complete: async (result) => {
+  //         const customers = result.data as Customer[];
+  
+  //         for (const customer of customers) {
+  //           const {
+  //             name,
+  //             username,
+  //             contactNumber,
+  //             completeAddress,
+  //             area,
+  //             city,
+  //             category,
+  //             selectedPackage,
+  //             selectedCollector,
+  //             discount,
+  //             device,
+  //             finalPrice,
+  //           } = customer;
+  
+  //           // Validate required fields
+  //           if (
+  //             !name ||
+  //             !username ||
+  //             !contactNumber ||
+  //             !completeAddress ||
+  //             !area ||
+  //             !city ||
+  //             !category ||
+  //             !selectedPackage ||
+  //             !selectedCollector ||
+  //             discount === undefined ||
+  //             device === undefined ||
+  //             finalPrice === undefined
+  //           ) {
+  //             console.warn("Skipping incomplete customer data:", customer);
+  //             continue;
+  //           }
+  
+  //           const currentDate = new Date();
+  //           const lastPayDate = new Date(currentDate);
+  //           lastPayDate.setMonth(lastPayDate.getMonth() - 1);
+  
+  //           const customerData = {
+  //             name,
+  //             username,
+  //             contactNumber,
+  //             completeAddress,
+  //             area,
+  //             city,
+  //             category,
+  //             selectedPackage,
+  //             selectedCollector,
+  //             discount,
+  //             device,
+  //             finalPrice,
+  //             lastPaid:0,
+  //             remainingamount:0,
+  //             createDate: currentDate,
+  //             lastpay: lastPayDate,
+  //           };
+  
+  //           await addDoc(collection(firestore, "customers"), customerData);
+  //         }
+  
+  //         alert("Bulk upload successful!");
+  //         setBulkFile(null);
+  //       },
+  //       error: (error) => {
+  //         console.error("Error parsing CSV:", error);
+  //         alert("Failed to upload CSV. Please check the file format.");
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error("Error during bulk upload:", error);
+  //     alert("Failed to upload customers: " + error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // const handleDownloadFormat = () => {
+  //   const headers = [
+  //     ["Name", "Username", "Contact Number", "Complete Address", "Area", "City", "Category", "Selected Package", "Selected Collector", "Discount","Device", "Final Price", "Create Date", "Last Pay"],
+  //   ];
+
+  //   const emptyRow = [{
+  //     name: "",
+  //     username: "",
+  //     contactNumber: "",
+  //     completeAddress: "",
+  //     area: "",
+  //     city: "",
+  //     category: "",
+  //     selectedPackage: "",
+  //     selectedCollector: "",
+  //     discount: "",
+  //     device:"",
+  //     finalPrice: "",
       
-      createDate: "",
-      lastpay: "",
-    }];
+  //     createDate: "",
+  //     lastpay: "",
+  //   }];
 
-    const worksheet = XLSX.utils.json_to_sheet(emptyRow, { header: Object.keys(emptyRow[0]) });
-    XLSX.utils.sheet_add_aoa(worksheet, headers, { origin: "A1" });
+  //   const worksheet = XLSX.utils.json_to_sheet(emptyRow, { header: Object.keys(emptyRow[0]) });
+  //   XLSX.utils.sheet_add_aoa(worksheet, headers, { origin: "A1" });
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
-    XLSX.writeFile(workbook, "Customer_Format.xlsx");
-  };
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Customer_Format");
+  //   XLSX.writeFile(workbook, "Customer_Format.xlsx");
+  // };
 
   return (
     <div className="container mx-auto p-6 pt-0">
@@ -293,7 +457,7 @@ const AddCustomerPage = () => {
         <div className="flex items-center">
           <input
             type="file"
-            accept=".csv"
+            accept=".xlsx"
             onChange={(e) => setBulkFile(e.target.files ? e.target.files[0] : null)}
             className="w-50 p-2 border rounded-lg bg-gray-100 focus:outline-none mr-4"
           />
@@ -302,7 +466,7 @@ const AddCustomerPage = () => {
           <button
             onClick={handleBulkUpload}
             disabled={isLoading || !bulkFile}
-            className="w-1/4 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-1/4 bg-black text-white p-3 rounded-lg hover:bg-[#8A56E8] focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             {isLoading ? "Uploading..." : "Upload CSV"}
           </button>
@@ -478,7 +642,7 @@ const AddCustomerPage = () => {
           <button
             onClick={handleAddCustomer}
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full bg-black text-white p-3 rounded-lg hover:bg-[#8A56E8] focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             {isLoading ? "Adding..." : "Add Customer"}
           </button>

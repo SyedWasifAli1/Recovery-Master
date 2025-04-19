@@ -405,7 +405,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-red-600">Dashboard Overview</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#8A56E8]">Dashboard Overview</h1>
             <div className="flex items-center space-x-4">
               {/* <button className="p-2 rounded-full hover:bg-gray-100">
                 <FiHome className="h-5 w-5 text-gray-600" />

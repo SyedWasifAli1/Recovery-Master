@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, getDocs, Timestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  Timestamp,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
 import crypto from "crypto";
 import Loader from "@/components/loader";
@@ -22,7 +29,9 @@ interface Collector {
   uid: string;
 }
 
-const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): string => {
+const formatFirestoreDatefilter = (
+  timestamp: Timestamp | Date | undefined
+): string => {
   if (!timestamp) return "Unknown";
   const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
   return new Intl.DateTimeFormat("en-CA", {
@@ -37,10 +46,14 @@ const CollectorsListPage = () => {
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchCollector, setSearchCollector] = useState("");
-  const [selectedCollector, setSelectedCollector] = useState<Collector | null>(null);
+  const [selectedCollector, setSelectedCollector] = useState<Collector | null>(
+    null
+  );
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [editingCollector, setEditingCollector] = useState<Collector | null>(null);
+  const [editingCollector, setEditingCollector] = useState<Collector | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchCollectors = async () => {
@@ -57,8 +70,8 @@ const CollectorsListPage = () => {
             completeAddress: data.completeAddress || "N/A",
             totalPayments: data.totalPayments || 0,
             createDate: formatFirestoreDatefilter(data.createDate),
-            role: data.role || "N/A",
-            uid: doc.id, // Use the document ID as uid
+            role: data.role || "collector",
+            uid: doc.id,
           };
         });
         setCollectors(collectorsData);
@@ -79,10 +92,14 @@ const CollectorsListPage = () => {
 
   const handleDelete = async (collectorId: number) => {
     try {
-      const collectorToDelete = collectors.find((c) => c.collectorId === collectorId);
+      const collectorToDelete = collectors.find(
+        (c) => c.collectorId === collectorId
+      );
       if (collectorToDelete) {
         await deleteDoc(doc(firestore, "collectors", collectorToDelete.uid));
-        setCollectors(collectors.filter((c) => c.collectorId !== collectorId));
+        setCollectors(
+          collectors.filter((c) => c.collectorId !== collectorId)
+        );
       }
     } catch (error) {
       console.error("Error deleting collector:", error);
@@ -105,9 +122,15 @@ const CollectorsListPage = () => {
         contactNumber: editingCollector.contactNumber,
         completeAddress: editingCollector.completeAddress,
         totalPayments: editingCollector.totalPayments,
+        role: editingCollector.role,
       });
+
       setCollectors(
-        collectors.map((c) => (c.collectorId === editingCollector.collectorId ? editingCollector : c))
+        collectors.map((c) =>
+          c.collectorId === editingCollector.collectorId
+            ? editingCollector
+            : c
+        )
       );
       setEditingCollector(null);
     } catch (error) {
@@ -117,9 +140,13 @@ const CollectorsListPage = () => {
 
   const filteredCollectors = collectors.filter((collector) => {
     const isCollectorMatch =
-      searchCollector === "" || collector.name?.toLowerCase().includes(searchCollector.toLowerCase());
+      searchCollector === "" ||
+      collector.name
+        ?.toLowerCase()
+        .includes(searchCollector.toLowerCase());
     const isDateInRange =
-      (fromDate === "" || collector.createDate >= fromDate) && (toDate === "" || collector.createDate <= toDate);
+      (fromDate === "" || collector.createDate >= fromDate) &&
+      (toDate === "" || collector.createDate <= toDate);
     return isCollectorMatch && isDateInRange;
   });
 
@@ -133,6 +160,7 @@ const CollectorsListPage = () => {
       Email: collector.email,
       Password: collector.password,
       "Created Date": collector.createDate,
+      Role: collector.role,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -142,14 +170,17 @@ const CollectorsListPage = () => {
   };
 
   if (loading) {
-    return <div><Loader /></div>;
+    return (
+      <div>
+        <Loader />
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Collectors List</h1>
       <div className="grid grid-cols-4 gap-4 mb-4">
-        {/* Search and Date Filters */}
         <div className="flex flex-col">
           <label className="text-sm font-medium mb-1">Search Collector</label>
           <input
@@ -188,55 +219,55 @@ const CollectorsListPage = () => {
           </button>
         </div>
       </div>
-      {collectors.length === 0 ? (
-        <p>No collectors found.</p>
-      ) : (
-        <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-          <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
-            <thead>
-              <tr className="bg-gray-200 text-left">
-                <th className="border border-gray-700 px-4 py-2">Collector ID</th>
-                <th className="border border-gray-700 px-4 py-2">Name</th>
-                <th className="border border-gray-700 px-4 py-2">Contact Number</th>
-                <th className="border border-gray-700 px-4 py-2">Email</th>
-                <th className="border border-gray-700 px-4 py-2">Password</th>
-                <th className="border border-gray-700 px-4 py-2">Action</th>
+
+      <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
+          <thead>
+            <tr className="bg-gray-200 text-left">
+              <th className="border border-gray-700 px-4 py-2">Collector ID</th>
+              <th className="border border-gray-700 px-4 py-2">Name</th>
+              <th className="border border-gray-700 px-4 py-2">Contact Number</th>
+              <th className="border border-gray-700 px-4 py-2">Email</th>
+              <th className="border border-gray-700 px-4 py-2">Password</th>
+              <th className="border border-gray-700 px-4 py-2">Role</th>
+              <th className="border border-gray-700 px-4 py-2">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredCollectors.map((collector) => (
+              <tr key={collector.collectorId} className="hover:bg-gray-100">
+                <td className="border border-gray-700 px-4 py-2">{collector.collectorId}</td>
+                <td className="border border-gray-700 px-4 py-2">{collector.name}</td>
+                <td className="border border-gray-700 px-4 py-2">{collector.contactNumber}</td>
+                <td className="border border-gray-700 px-4 py-2">{collector.email}</td>
+                <td className="border border-gray-700 px-4 py-2">{collector.password}</td>
+                <td className="border border-gray-700 px-4 py-2">{collector.role}</td>
+                <td className="border border-gray-700 px-4 py-2 flex gap-2">
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={() => setSelectedCollector(collector)}
+                  >
+                    Details
+                  </button>
+                  <button
+                    className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                    onClick={() => handleEdit(collector)}
+                  >
+                    <FiEdit />
+                  </button>
+                  <button
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+                    onClick={() => handleDelete(collector.collectorId)}
+                  >
+                    <FiTrash />
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredCollectors.map((collector) => (
-                <tr key={collector.collectorId} className="hover:bg-gray-100">
-                  <td className="border border-gray-700 px-4 py-2">{collector.collectorId}</td>
-                  <td className="border border-gray-700 px-4 py-2">{collector.name}</td>
-                  <td className="border border-gray-700 px-4 py-2">{collector.contactNumber}</td>
-                  <td className="border border-gray-700 px-4 py-2">{collector.email}</td>
-                  <td className="border border-gray-700 px-4 py-2">{collector.password}</td>
-                  <td className="border border-gray-700 px-4 py-2 flex gap-2">
-                    <button
-                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-                      onClick={() => setSelectedCollector(collector)}
-                    >
-                      Details
-                    </button>
-                    <button
-                      className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-700"
-                      onClick={() => handleEdit(collector)}
-                    >
-                      <FiEdit />
-                    </button>
-                    <button
-                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-                      onClick={() => handleDelete(collector.collectorId)}
-                    >
-                      <FiTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {selectedCollector && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
@@ -259,6 +290,7 @@ const CollectorsListPage = () => {
           </div>
         </div>
       )}
+
       {editingCollector && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
@@ -275,17 +307,6 @@ const CollectorsListPage = () => {
                   }
                 />
               </div>
-              {/* <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  type="email"
-                  className="p-2 border rounded w-full"
-                  value={editingCollector.email}
-                  onChange={(e) =>
-                    setEditingCollector({ ...editingCollector, email: e.target.value })
-                  }
-                />
-              </div> */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Contact Number</label>
                 <input
@@ -307,6 +328,22 @@ const CollectorsListPage = () => {
                     setEditingCollector({ ...editingCollector, completeAddress: e.target.value })
                   }
                 />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Role</label>
+                <select
+                  className="p-2 border rounded w-full"
+                  value={editingCollector.role}
+                  onChange={(e) => {
+                    const confirmChange = confirm("Are you sure you want to change the role?");
+                    if (confirmChange) {
+                      setEditingCollector({ ...editingCollector, role: e.target.value });
+                    }
+                  }}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Active">Active</option>
+                </select>
               </div>
               <div className="flex justify-end gap-2">
                 <button
