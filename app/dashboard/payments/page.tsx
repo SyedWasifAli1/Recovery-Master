@@ -192,7 +192,7 @@ const Payments = () => {
         <div className="flex flex-end">
         <button
         onClick={exportToExcel}
-        className="mt-6 px-4 py-2 bg-green-500 text-white w-full flex items-center justify-center rounded hover:bg-green-600 transition"
+        className="mt-6 px-4 py-2 bg-black text-white w-full flex items-center justify-center rounded hover:bg-[#8A56E8] transition"
         // className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
       >
         Download
@@ -220,7 +220,7 @@ const Payments = () => {
           <div className="max-h-[250px] overflow-y-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-blue-500 text-white">
+                <tr className="bg-[#8A56E8] text-white">
                   <th className="p-3 border">Collector Name</th>
                   <th className="p-3 border">Customer Name</th>
                   <th className="p-3 border">Business Name</th>

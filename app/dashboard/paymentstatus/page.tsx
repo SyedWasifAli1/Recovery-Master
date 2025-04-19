@@ -643,7 +643,7 @@ function Customers() {
   <div className="inline-block min-w-full">
   <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
   <thead>
-    <tr className="bg-red-500 text-white text-left">
+    <tr className="bg-[#8A56E8] text-white text-left">
       {/* <th className="border border-gray-700 px-4 py-2">
         <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
       </th>
@@ -679,19 +679,7 @@ function Customers() {
             onChange={() => handleCheckboxChange(customer.customerId)}
           />
         </td> */}
-        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
-          <span
-            className={`px-2 py-1 rounded-sm text-white ${
-              customer.status === "Collected"
-                ? "bg-green-500"
-                : customer.status === "Pending"
-                ? "bg-yellow-500"
-                : "bg-yellow-500"
-            }`}
-          >
-            {customer.status}
-          </span>
-        </td>
+        
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {generateNumericHash(customer.customerId)}
         </td>
@@ -699,10 +687,11 @@ function Customers() {
           {customer.name}
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
-          {customer.username}
+          {customer.contactNumber}
         </td>
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
-          {customer.contactNumber}
+          {customer.username}
+
         </td>
         {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.completeAddress}
@@ -732,6 +721,20 @@ function Customers() {
         <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           {customer.collectorName}
         </td>
+        <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
+          <span
+            className={`px-2 py-1 rounded-sm text-white ${
+              customer.status === "Collected"
+                ? "bg-green-500"
+                : customer.status === "Pending"
+                ? "bg-yellow-500"
+                : "bg-yellow-500"
+            }`}
+          >
+            {customer.status}
+          </span>
+        </td>
+        
         {/* <td className="border border-gray-700 px-4 py-2 max-w-[100%] overflow-hidden overflow-ellipsis whitespace-nowrap">
           <span
             className={`px-2 py-1 rounded-sm text-white ${

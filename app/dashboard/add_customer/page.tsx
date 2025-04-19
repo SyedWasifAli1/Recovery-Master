@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config"; // Adjust the path
 import { collection, getDocs, addDoc } from "firebase/firestore";
-import Papa from "papaparse"; // Import PapaParse
+// import Papa from "papaparse"; // Import PapaParse
 import withAuth from "@/app/lib/withauth";
 import * as XLSX from "xlsx";
 
@@ -266,24 +266,24 @@ const handleBulkUpload = async () => {
 };
 
 const handleDownloadFormat = () => {
-  const headers = [
-    [
-      "Name",
-      "Username",
-      "Contact Number",
-      "Complete Address",
-      "Area",
-      "City",
-      "Category",
-      "Selected Package",
-      "Selected Collector",
-      "Discount",
-      "Device",
-      "Final Price",
-      "Create Date",
-      "Last Pay",
-    ],
-  ];
+  // const headers = [
+  //   [
+  //     "Name",
+  //     "Username",
+  //     "Contact Number",
+  //     "Complete Address",
+  //     "Area",
+  //     "City",
+  //     "Category",
+  //     "Selected Package",
+  //     "Selected Collector",
+  //     "Discount",
+  //     "Device",
+  //     "Final Price",
+  //     "Create Date",
+  //     "Last Pay",
+  //   ],
+  // ];
 
   // 🔥 Demo Data
   const demoData = [

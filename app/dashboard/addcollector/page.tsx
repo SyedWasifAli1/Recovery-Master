@@ -112,7 +112,7 @@ const generateNumericHash = (id:string) => {
         </div>
 
         <div className="flex justify-center">
-          <button onClick={handleAddCollector} disabled={isLoading} className="w-full sm:w-1/3 bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <button onClick={handleAddCollector} disabled={isLoading} className="w-full sm:w-1/3 bg-black text-white p-4 rounded-lg hover:bg-[#8A56E8] focus:outline-none focus:ring-2 focus:ring-blue-400">
             {isLoading ? "Adding..." : "Add Collector"}
           </button>
         </div>

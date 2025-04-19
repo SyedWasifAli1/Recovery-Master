@@ -600,7 +600,7 @@ function Customers() {
        <div className="flex items-end"> {/* Added for the Download button */}
          <button
          onClick={exportToExcel}
-         className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
+         className="bg-black hover:bg-[#8A56E8]  text-white px-4 py-2 rounded w-full flex items-center justify-center"
        >
          <FiDownload className="w-5 h-5 mr-2" /> 
          Download {/* Optional text */}
@@ -625,7 +625,7 @@ function Customers() {
   <div className="inline-block min-w-full">
   <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
   <thead>
-    <tr className="bg-red-500 text-white text-left">
+    <tr className="bg-[#8A56E8] text-white text-left">
       <th className="border border-gray-700 px-4 py-2">
         <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
       </th>

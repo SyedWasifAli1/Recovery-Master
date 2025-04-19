@@ -212,7 +212,7 @@ const CollectorsListPage = () => {
         <div className="flex items-end">
           <button
             onClick={exportToExcel}
-            className="bg-blue-500 text-white px-4 py-2 rounded w-full flex items-center justify-center"
+            className="hover:bg-[#8A56E8] bg-black text-white px-4 py-2 rounded w-full flex items-center justify-center"
           >
             <FiDownload className="w-5 h-5 mr-2" />
             Download
@@ -223,7 +223,7 @@ const CollectorsListPage = () => {
       <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
         <table className="table-auto w-full border-collapse border border-gray-700 text-sm">
           <thead>
-            <tr className="bg-gray-200 text-left">
+            <tr className="bg-[#8A56E8] text-white text-left">
               <th className="border border-gray-700 px-4 py-2">Collector ID</th>
               <th className="border border-gray-700 px-4 py-2">Name</th>
               <th className="border border-gray-700 px-4 py-2">Contact Number</th>
