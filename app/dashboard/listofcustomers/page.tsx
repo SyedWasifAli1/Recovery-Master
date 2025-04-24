@@ -392,7 +392,7 @@ function Customers() {
       // Fetch payments
       const paymentsQuery = query(
         collection(firestore, "payments"),
-        where("customerId", "==", parseInt(generateNumericHash(customerId)))
+        where("customerId", "==", customerId)
       );
       const snapshot = await getDocs(paymentsQuery);
   

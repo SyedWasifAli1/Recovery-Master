@@ -52,7 +52,7 @@ export default function SignIn() {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Image
-            src="/icon.png"
+            src="/log.png"
             alt="Logo"
             width={100}
             height={100}
