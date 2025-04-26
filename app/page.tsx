@@ -52,7 +52,7 @@ export default function SignIn() {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Image
-            src="/log.png"
+            src="/login.png"
             alt="Logo"
             width={100}
             height={100}
@@ -84,7 +84,7 @@ export default function SignIn() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-red-500 text-white py-2 rounded hover:bg-[#ea580c]"
+          className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-700"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>

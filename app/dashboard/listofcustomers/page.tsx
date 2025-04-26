@@ -77,7 +77,7 @@ function Customers() {
     try {
       const customerRef = doc(firestore, "customers", updatedCustomer.customerId);
   
-      // Extract only the fields you want to update
+      // Extract all fields you want to update
       const updateData = {
         name: updatedCustomer.name,
         username: updatedCustomer.username,
@@ -89,6 +89,8 @@ function Customers() {
         device: updatedCustomer.device,
         discount: updatedCustomer.discount,
         finalPrice: updatedCustomer.finalPrice,
+        selectedCollector: updatedCustomer.selectedCollector, // 🛠️ New
+        // collectorName: updatedCustomer.collectorName,         // 🛠️ New
       };
   
       await updateDoc(customerRef, updateData);
@@ -106,6 +108,7 @@ function Customers() {
       console.error("Error updating customer:", error);
     }
   };
+  
   const formatFirestoreDate = (timestamp: Timestamp | string | undefined): string => {
     if (!timestamp) return "Unknown";
 

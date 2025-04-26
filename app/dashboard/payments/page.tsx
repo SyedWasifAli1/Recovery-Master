@@ -154,9 +154,8 @@ const Payments = () => {
    };
 
   return (
-    <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-center mb-4">All Payments</h1>
-
+    <div className="p-0 mx-auto">
+      <h1 className="text-2xl font-bold  mb-4">All Payments</h1>
       {/* ✅ Filter Inputs */}
       <div className="grid grid-cols-4 gap-4 mb-4">
         <div className="flex flex-col">
@@ -201,23 +200,43 @@ const Payments = () => {
       </div>
 
       {/* ✅ Total Amount Display */}
-      <div className="flex flex-wrap items-center gap-4 text-lg font-semibold mb-2">
-  <div>
-    Total Amount: <span className="text-blue-600">PKR {totalAmount.toLocaleString()}</span>
+     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+  {/* Total Amount */}
+  <div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+    <div className="flex justify-between items-center">
+      <h2 className="font-bold text-gray-400 text-lg">Total Amount</h2>
+      <span className="text-gray-300">|</span>
+      <p className="text-black text-xl font-bold">PKR {totalAmount.toLocaleString()}</p>
+    </div>
   </div>
-  <div>
-    Collected: <span className="text-blue-600">PKR {collected.toLocaleString()}</span>
+
+  {/* Collected */}
+  <div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+    <div className="flex justify-between items-center">
+      <h2 className="font-bold text-gray-400 text-lg">Collected</h2>
+      <span className="text-gray-300">|</span>
+      <p className="text-black text-xl font-bold">PKR {collected.toLocaleString()}</p>
+    </div>
   </div>
-  <div>
-    Balance: <span className="text-blue-600">PKR {balance.toLocaleString()}</span>
+
+  {/* Balance */}
+  <div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+    <div className="flex justify-between items-center">
+      <h2 className="font-bold text-gray-400 text-lg">Balance</h2>
+      <span className="text-gray-300">|</span>
+      <p className="text-black text-xl font-bold">PKR {balance.toLocaleString()}</p>
+    </div>
   </div>
+
 </div>
+
 
       {loading ? (
         <p className="text-center">Loading...</p>
       ) : (
         <div className="overflow-x-auto border border-gray-300 rounded-lg">
-          <div className="max-h-[250px] overflow-y-auto">
+          <div className="max-h-[320px] overflow-y-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-[#8A56E8] text-white">

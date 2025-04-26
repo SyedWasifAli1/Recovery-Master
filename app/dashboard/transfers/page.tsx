@@ -273,12 +273,11 @@
 // };
 
 // export default withAuth(TransfersListPage);
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { firestore } from "../../lib/firebase-config";
-import { collection, query, orderBy, doc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, doc, getDoc, onSnapshot, getDocs } from "firebase/firestore";
 import withAuth from "@/app/lib/withauth";
 import { Timestamp } from "firebase/firestore";
 import * as XLSX from "xlsx";
@@ -292,8 +291,12 @@ interface Transfer {
   transfer_date_filter: string;
   collectorId: string;
   collector_name?: string;
-  image_bytes?: Uint8Array; // Change to Uint8Array for byte data
-  payment_type?: string; // Add payment_type field
+  image_bytes?: Uint8Array;
+  payment_type?: string;
+}
+
+interface Collector {
+  totalPayments?: number;
 }
 
 const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string => {
@@ -310,6 +313,7 @@ const formatFirestoreDate = (timestamp: Timestamp | Date | undefined): string =>
     timeZone: "Asia/Karachi",
   }).format(date);
 };
+
 const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): string => {
   if (!timestamp) return "Unknown";
   const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
@@ -320,17 +324,43 @@ const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): str
     timeZone: "Asia/Karachi",
   }).format(date);
 };
+
 const TransfersListPage = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchCollector, setSearchCollector] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [paymentType, setPaymentType] = useState<"all" | "internal" | "external">("all"); // Add payment type filter
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // State for selected image
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [paymentType, setPaymentType] = useState<"all" | "internal" | "external">("all");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [collectorsData, setCollectorsData] = useState<Record<string, Collector>>({});
+  const [allCollectorsTotalPayments, setAllCollectorsTotalPayments] = useState<number>(0);
 
   useEffect(() => {
+    // Fetch all collectors data once
+    const fetchAllCollectors = async () => {
+      const collectorsRef = collection(firestore, "collectors");
+      const q = query(collectorsRef);
+      const querySnapshot = await getDocs(q);
+      
+      let total = 0;
+      const collectorsMap: Record<string, Collector> = {};
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        collectorsMap[doc.id] = {
+          totalPayments: data.totalPayments || 0
+        };
+        total += data.totalPayments || 0;
+      });
+      
+      // setCollectorsData(collectorsMap);
+      setAllCollectorsTotalPayments(total);
+    };
+
+    fetchAllCollectors();
+
     const transfersQuery = query(collection(firestore, "transfers"), orderBy("transfer_date", "desc"));
 
     const unsubscribe = onSnapshot(transfersQuery, async (snapshot) => {
@@ -340,19 +370,21 @@ const TransfersListPage = () => {
         transfer_date: formatFirestoreDate(doc.data().transfer_date),
         transfer_date_filter: formatFirestoreDatefilter(doc.data().transfer_date),
         collectorId: doc.data().collectorId ?? "Unknown",
-        image_bytes: doc.data().image_bytes, // Fetch image_bytes
-        payment_type: doc.data().payment_type, // Fetch payment_type
+        image_bytes: doc.data().image_bytes,
+        payment_type: doc.data().payment_type,
       }));
 
+      // Get collector names for display
       const uniqueCollectorIds = [...new Set(transfersData.map((t) => t.collectorId))];
-      const collectorsMap: Record<string, string> = {};
+      const collectorsNameMap: Record<string, string> = {};
+
       await Promise.all(
         uniqueCollectorIds.map(async (id) => {
           if (id !== "Unknown") {
             const collectorRef = doc(firestore, "collectors", id);
             const collectorSnap = await getDoc(collectorRef);
             if (collectorSnap.exists()) {
-              collectorsMap[id] = collectorSnap.data().name ?? "Unknown";
+              collectorsNameMap[id] = collectorSnap.data().name ?? "Unknown";
             }
           }
         })
@@ -360,7 +392,7 @@ const TransfersListPage = () => {
 
       transfersData = transfersData.map((transfer) => ({
         ...transfer,
-        collector_name: collectorsMap[transfer.collectorId] ?? "Unknown",
+        collector_name: collectorsNameMap[transfer.collectorId] ?? "Unknown",
       }));
 
       setTransfers(transfersData);
@@ -376,19 +408,20 @@ const TransfersListPage = () => {
     const isDateInRange =
       (fromDate === "" || transfer.transfer_date_filter >= fromDate) && (toDate === "" || transfer.transfer_date_filter <= toDate);
     const isPaymentTypeMatch =
-      paymentType === "all" || transfer.payment_type === paymentType; // Filter by payment type
+      paymentType === "all" || transfer.payment_type === paymentType;
     return isCollectorMatch && isDateInRange && isPaymentTypeMatch;
   });
 
-  // Calculate total amount of filtered transfers
-  const totalAmount = filteredTransfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+  // Calculate totals
+  const walletTransfers = filteredTransfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+  const walletBalance = allCollectorsTotalPayments; // Use the pre-calculated total of all collectors
+  const totalAmount = walletTransfers + walletBalance;
 
   const exportToExcel = () => {
     if (filteredTransfers.length === 0) {
       alert("No data available to export!");
       return;
     }
-    // Prepare the data for the Excel file
     const data = filteredTransfers.map((transfer) => ({
       "Transfer Date": transfer.transfer_date,
       "Collector Name": transfer.collector_name,
@@ -397,25 +430,18 @@ const TransfersListPage = () => {
       "Amount": transfer.amount,
     }));
   
-    // Create a worksheet from the data
     const worksheet = XLSX.utils.json_to_sheet(data);
-  
-    // Create a workbook and add the worksheet
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Transfers");
-  
-    // Write the workbook to a file and trigger the download
     XLSX.writeFile(workbook, "Transfers.xlsx");
   };
 
-  // Function to open modal with selected image
   const openModal = (imageBytes: Uint8Array) => {
     const imageUrl = `data:image/png;base64,${imageBytes}`;
     setSelectedImage(imageUrl);
     setIsModalOpen(true);
   };
 
-  // Function to close modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedImage(null);
@@ -424,7 +450,7 @@ const TransfersListPage = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-0">
       <h1 className="text-2xl font-bold mb-6">All Transfers (Live Updates)</h1>
       <div className="grid grid-cols-5 gap-4 mb-4">
         <div className="flex flex-col">
@@ -479,21 +505,42 @@ const TransfersListPage = () => {
       </div>
 
       {/* Total Amount Display */}
-      <div className="mb-4 p-3 bg-gray-100 rounded-lg">
-        <div className="flex justify-between items-center">
-          <span className="font-medium">Total Amount:</span>
-          <span className="font-bold">{totalAmount.toLocaleString()}</span>
-        </div>
-        {/* <div className="flex justify-between items-center">
-          <span className="font-medium">Total Transactions:</span>
-          <span className="font-bold">{filteredTransfers.length}</span>
-        </div> */}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+<div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+  <div className="flex justify-between  items-center">
+    <h2 className="font-bold text-gray-400 text-lg">Total Collected</h2>
+    <span className="text-gray-300"> <b>|</b></span>
+    <p className="text-black text-xl font-bold">{totalAmount.toLocaleString()}</p>
+  </div>
+</div>
+
+<div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+  <div className="flex justify-between items-center">
+    <h2 className="font-bold text-gray-400 text-lg">Wallet Transferred </h2>
+    <span className="text-gray-300"> <b>|</b></span>
+    <p className="text-black text-xl font-bold">{walletTransfers.toLocaleString()}</p>
+  </div>
+</div>
+
+<div className="flex flex-col justify-center bg-white rounded-lg shadow-md px-5 py-0 h-10">
+  <div className="flex justify-between items-center">
+    <h2 className="font-bold text-gray-400 text-lg">Wallet Balance</h2>
+    <span className="text-gray-300"> <b>|</b></span>
+    <p className="text-black text-xl font-bold">{walletBalance.toLocaleString()}</p>
+  </div>
+</div>
+
+</div>
+
+
+
+
 
       {filteredTransfers.length === 0 ? (
         <p>No transfers found.</p>
       ) : (
-        <div className="overflow-x-auto border border-gray-300 rounded-lg max-h-[250px] overflow-y-auto">
+        <div className="overflow-x-auto border border-gray-300 rounded-lg max-h-[320px] overflow-y-auto">
           <table className="table-auto w-full border-collapse">
             <thead>
               <tr className="bg-[#8A56E8] text-white">

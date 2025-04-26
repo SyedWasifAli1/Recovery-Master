@@ -9,6 +9,11 @@ interface Package {
   size: string;
 }
 
+interface Collector {
+  id: string;
+  name: string;
+}
+
 interface Customer {
   customerId: string;
   name: string;
@@ -41,13 +46,13 @@ interface EditCustomerModalProps {
 
 const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, customer, onSave }) => {
   const [formData, setFormData] = useState<Customer | null>(customer);
-  const [packages, setPackages] = useState<Package[]>([]); // State for packages
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [collectors, setCollectors] = useState<Collector[]>([]);
 
   useEffect(() => {
     setFormData(customer);
   }, [customer]);
 
-  // Fetch packages when the component mounts
   useEffect(() => {
     const fetchPackages = async () => {
       const snapshot = await getDocs(collection(firestore, "packages"));
@@ -63,7 +68,19 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, 
     fetchPackages();
   }, []);
 
-  // Calculate final price when selectedPackage, device, or discount changes
+  useEffect(() => {
+    const fetchCollectors = async () => {
+      const snapshot = await getDocs(collection(firestore, "collectors"));
+      const collectorsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+      }));
+      setCollectors(collectorsData);
+    };
+
+    fetchCollectors();
+  }, []);
+
   useEffect(() => {
     if (formData?.selectedPackage) {
       const selectedPkg = packages.find((pkg) => pkg.id === formData.selectedPackage);
@@ -80,10 +97,20 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev!,
-      [name]: value,
-    }));
+
+    if (name === "selectedCollector") {
+      const selectedCollector = collectors.find((col) => col.id === value);
+      setFormData((prev) => ({
+        ...prev!,
+        selectedCollector: value,
+        collectorName: selectedCollector ? selectedCollector.name : "",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev!,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,7 +123,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, 
   if (!isOpen || !formData) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg w-1/2">
         <h2 className="text-xl font-bold mb-4">Edit Customer</h2>
         <form onSubmit={handleSubmit}>
@@ -239,7 +266,27 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, 
                 ))}
               </select>
             </div>
+
+            {/* Selected Collector */}
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Select Collector</label>
+              <select
+                name="selectedCollector"
+                value={formData.selectedCollector}
+                onChange={handleChange}
+                className="p-2 border rounded"
+              >
+                <option value="">Select Collector</option>
+                {collectors.map((collector) => (
+                  <option key={collector.id} value={collector.id}>
+                    {collector.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
           </div>
+
           <div className="flex justify-end mt-4">
             <button type="button" onClick={onClose} className="bg-gray-500 text-white px-4 py-2 rounded mr-2">
               Cancel
