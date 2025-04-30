@@ -1,289 +1,12 @@
-/* eslint-disable prefer-const */
-// /* eslint-disable @typescript-eslint/no-unused-vars */
-// "use client";
-// import { useEffect, useState } from "react";
-// import { getDocs, collection } from "firebase/firestore";
-// import { firestore } from "../lib/firebase-config";
-
-// interface User {
-//   uid: string;
-//   email: string;
-// }
-
-// interface Product {
-//   id: string;
-//   name: string;
-//   price: number;
-// }
-
-// interface Category {
-//   id: string;
-//   name: string;
-// }
-
-// export default function Dashboard() {
-//   const [users, setUsers] = useState<number>(0);
-//   const [productsCount, setProductsCount] = useState<number>(0);
-//   const [categoriesCount, setCategoriesCount] = useState<number>(0); // Categories count state
-//   const [allSubCategoriesCount, setAllSubCategoriesCount] = useState<number>(0); // Total subcategories count across all categories
-//   const [ordersCount, setOrdersCount] = useState<number>(0); // Total orders count from user_orders
-//   const [loadingUsers, setLoadingUsers] = useState(true);
-//   const [loadingProducts, setLoadingProducts] = useState(true);
-//   const [loadingCategories, setLoadingCategories] = useState(true);
-//   const [loadingSubCategories, setLoadingSubCategories] = useState(true); // Subcategories loading state
-//   const [loadingOrders, setLoadingOrders] = useState(true); // Orders loading state
-
-//   // Fetch users, products, categories, subcategories, and orders
-//   useEffect(() => {
-    
-//     async function fetchUsers() {
-//       try {
-//         const querySnapshot = await getDocs(collection(firestore, "customers")); // Replace "customers" with your collection name
-//         setUsers(querySnapshot.size); // Get the count of documents in the customers collection
-//         setLoadingUsers(false);
-//       } catch (error) {
-//         console.error("Error fetching customers count:", error);
-//         setLoadingUsers(false);
-//       }
-//     }
-    
-//     async function fetchProductsCount() {
-//       try {
-//         const querySnapshot = await getDocs(collection(firestore, "products"));
-//         setProductsCount(querySnapshot.size); // Get the count of documents in the products collection
-//         setLoadingProducts(false);
-//       } catch (error) {
-//         console.error("Error fetching products count:", error);
-//         setLoadingProducts(false);
-//       }
-//     }
-
-
-//     async function fetchCategoriesCount() {
-//       try {
-//         const querySnapshot = await getDocs(collection(firestore, "category"));
-//         setCategoriesCount(querySnapshot.size); // Get the count of documents in the category collection
-//         setLoadingCategories(false);
-//       } catch (error) {
-//         console.error("Error fetching categories count:", error);
-//         setLoadingCategories(false);
-//       }
-//     }
-
-//     async function fetchAllSubCategoriesCount() {
-//       try {
-//         const categorySnapshot = await getDocs(collection(firestore, "category"));
-//         let totalSubCategories = 0;
-
-//         // For each category, fetch its subcategories
-//         for (const categoryDoc of categorySnapshot.docs) {
-//           const categoryId = categoryDoc.id;
-//           const subCategorySnapshot = await getDocs(collection(firestore, `category/${categoryId}/sub_categories`));
-//           totalSubCategories += subCategorySnapshot.size; // Add the count of subcategories for this category
-//         }
-
-//         setAllSubCategoriesCount(totalSubCategories); // Set the total subcategories count
-//         setLoadingSubCategories(false);
-//       } catch (error) {
-//         console.error("Error fetching subcategories count:", error);
-//         setLoadingSubCategories(false);
-//       }
-//     }
-
-//     async function fetchOrdersCount() {
-//       try {
-//         const categorySnapshot = await getDocs(collection(firestore, "orders"));
-//         let totalorder = 0;
-
-//         // For each category, fetch its subcategories
-//         for (const categoryDoc of categorySnapshot.docs) {
-//           const categoryId = categoryDoc.id;
-//           const subCategorySnapshot = await getDocs(collection(firestore, `orders/${categoryId}/user_orders`));
-//           totalorder += subCategorySnapshot.size; // Add the count of subcategories for this category
-//         }
-
-//         setOrdersCount(totalorder); // Set the total subcategories count
-//         setLoadingOrders(false);
-//       } catch (error) {
-//         console.error("Error fetching subcategories count:", error);
-//         setLoadingOrders(false);
-//       }
-//     }
-    
-    
-    
-
-//     fetchUsers();
-//     fetchProductsCount();
-//     fetchCategoriesCount();
-//     fetchAllSubCategoriesCount(); // Fetch total subcategories count across all categories
-//     fetchOrdersCount(); // Fetch total orders count from user_orders subcollections
-//   }, []);
-
-//   return (
-//     <div className="h-[80vh]  text-black p-8">
-//       <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-//       <div className="grid grid-cols-2 gap-4">
-//         <div className="bg-gray-200 p-4 rounded">
-//           <h2 className="text-xl font-bold mb-2">Users</h2>
-//           {loadingUsers ? (
-//             <p>Loading users...</p>
-//           ) : (
-//             <p className="text-lg font-semibold">Total Users: {users}</p>
-//           )}
-//         </div>
-//         <div className="bg-gray-200 p-4 rounded">
-//           <h2 className="text-xl font-bold mb-2">Products</h2>
-//           {loadingProducts ? (
-//             <p>Loading products...</p>
-//           ) : (
-//             <p className="text-lg font-semibold">Total Products: {productsCount}</p>
-//           )}
-//         </div>
-//         <div className="bg-gray-200 p-4 rounded">
-//           <h2 className="text-xl font-bold mb-2">Categories</h2>
-//           {loadingCategories ? (
-//             <p>Loading categories...</p>
-//           ) : (
-//             <p className="text-lg font-semibold">Total Categories: {categoriesCount}</p>
-//           )}
-//         </div>
-//         <div className="bg-gray-200 p-4 rounded">
-//           <h2 className="text-xl font-bold mb-2">Sub Categories</h2>
-//           {loadingSubCategories ? (
-//             <p>Loading subcategories...</p>
-//           ) : (
-//             <p className="text-lg font-semibold">Total Sub Categories: {allSubCategoriesCount}</p>
-//           )}
-//         </div>
-      
-//         <div className="bg-gray-200 p-4 rounded">
-//           <h2 className="text-xl font-bold mb-2">All Orders</h2>
-//           {loadingOrders ? (
-//             <p>Loading All Orders...</p>
-//           ) : (
-//             <p className="text-lg font-semibold">Total Sub Categories: {ordersCount}</p>
-//           )}
-//         </div>
-      
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-// /* eslint-disable @typescript-eslint/no-unused-vars */
-
-// "use client";
-// import { useEffect, useState } from "react";
-// import { getDocs, collection } from "firebase/firestore";
-// import { firestore } from "../lib/firebase-config";
-// import { Bar, Pie, Line } from "react-chartjs-2";
-// import { Chart, registerables } from "chart.js";
-
-// Chart.register(...registerables);
-
-// export default function Dashboard() {
-//   const [users, setUsers] = useState<number>(0);
-//   const [productsCount, setProductsCount] = useState<number>(0);
-//   const [categoriesCount, setCategoriesCount] = useState<number>(0);
-//   const [allSubCategoriesCount, setAllSubCategoriesCount] = useState<number>(0);
-//   const [ordersCount, setOrdersCount] = useState<number>(0);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     async function fetchData() {
-//       try {
-//         const usersData = await getDocs(collection(firestore, "customers"));
-//         const productsData = await getDocs(collection(firestore, "products"));
-//         const categoriesData = await getDocs(collection(firestore, "category"));
-
-//         let totalSubCategories = 0;
-//         for (const categoryDoc of categoriesData.docs) {
-//           const subCategoryData = await getDocs(
-//             collection(firestore, `category/${categoryDoc.id}/sub_categories`)
-//           );
-//           totalSubCategories += subCategoryData.size;
-//         }
-
-//         let totalOrders = 0;
-//         const ordersData = await getDocs(collection(firestore, "orders"));
-//         for (const orderDoc of ordersData.docs) {
-//           const userOrders = await getDocs(
-//             collection(firestore, `orders/${orderDoc.id}/user_orders`)
-//           );
-//           totalOrders += userOrders.size;
-//         }
-
-//         setUsers(usersData.size);
-//         setProductsCount(productsData.size);
-//         setCategoriesCount(categoriesData.size);
-//         setAllSubCategoriesCount(totalSubCategories);
-//         setOrdersCount(totalOrders);
-//         setLoading(false);
-//       } catch (error) {
-//         console.error("Error fetching data:", error);
-//         setLoading(false);
-//       }
-//     }
-
-//     fetchData();
-//   }, []);
-
-//   const data = {
-//     labels: ["Users", "Products", "Categories", "Subcategories", "Orders"],
-//     datasets: [
-//       {
-//         label: "Counts",
-//         data: [users, productsCount, categoriesCount, allSubCategoriesCount, ordersCount],
-//         backgroundColor: ["#4CAF50", "#2E7D32", "#66BB6A", "#A5D6A7", "#81C784"],
-//         borderColor: "#388E3C",
-//         borderWidth: 2,
-//         borderRadius: 10,
-//       },
-//     ],
-//   };
-
-//   return (
-//     <div className="h-screen p-8 text-black bg-white">
-//       <h1 className="text-3xl font-bold text-orange-700 mb-6">Dashboard Overview</h1>
-
-//       {loading ? (
-//         <p className="text-center text-lg font-semibold text-gray-700">Loading data...</p>
-//       ) : (
-//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//           {/* Bar Chart */}
-//           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-//             <h2 className="text-xl font-bold text-orange-400 mb-3">Data Overview</h2>
-//             <Bar data={data} />
-//           </div>
-
-//           {/* Pie Chart */}
-//           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-//             <h2 className="text-xl font-bold text-orange-400 mb-3">Category Distribution</h2>
-//             <Pie data={data} />
-//           </div>
-
-//           {/* Line Chart */}
-//           <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-//             <h2 className="text-xl font-bold text-orange-400 mb-3">Growth Trend</h2>
-//             <Line data={data} />
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
 "use client"
 
 import { useEffect, useState } from "react"
 import { firestore } from "../lib/firebase-config"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, onSnapshot, doc, getDoc, Timestamp } from "firebase/firestore"
 import { Bar, Pie } from "react-chartjs-2"
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from "chart.js"
 import withAuth from "../lib/withauth"
-import {  FiLogOut,  FiUsers, FiMapPin } from "react-icons/fi"
+import {  FiLogOut,  FiUsers, FiMapPin, FiDollarSign } from "react-icons/fi"
 import { signOut } from "firebase/auth"
 import { auth } from '../lib/firebase-config'
 import router from "next/router"
@@ -303,22 +26,53 @@ interface ChartData {
   }[]
 }
 
+// Interface for Payment
+interface Payment {
+  id: string;
+  amount: number;
+  remainingAmount: number;
+  totalAmount: number;
+  customerName: string;
+  collectorName: string;
+  BusinessName:string;
+  paymentDate: string;
+  paymentDatefilter: string;
+}
+
 const Dashboard = () => {
   const [customersData, setCustomersData] = useState<ChartData | null>(null)
   const [collectorsData, setCollectorsData] = useState<ChartData | null>(null)
   const [totalCustomers, setTotalCustomers] = useState<number>(0)
   const [totalCollectors, setTotalCollectors] = useState<number>(0)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [totalAmount, setTotalAmount] = useState<number>(0)
+  const [balance, setBalance] = useState<number>(0)
+  const [collected, setCollected] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
- const handleLogout = async () => {
+
+  const handleLogout = async () => {
     try {
-      await signOut(auth); // Sign out the user from Firebases
+      await signOut(auth);
       alert('You have been logged out!');
-      router.push('/'); // Redirect to login page (or wherever you want to redirect the user)
+      router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
       alert('Failed to sign out. Please try again.');
     }
   };
+
+  const formatFirestoreDatefilter = (timestamp: Timestamp | Date | undefined): string => {
+    if (!timestamp) return "Unknown";
+    const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
+    return new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Karachi",
+    }).format(date);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -390,6 +144,63 @@ const Dashboard = () => {
           ],
         })
         setTotalCollectors(totalCollectorsCount)
+
+        // Fetch Payments Data
+        const paymentsQuery = query(collection(firestore, "payments"), orderBy("paymentDate", "desc"));
+        const unsubscribe = onSnapshot(paymentsQuery, async (snapshot) => {
+          const paymentsData: Payment[] = await Promise.all(
+            snapshot.docs.map(async (paymentDoc) => {
+              const payment = paymentDoc.data();
+
+              let collectorName = "Unknown";
+              if (payment.userId) {
+                const collectorDocRef = doc(firestore, "collectors", payment.userId);
+                const collectorDocSnap = await getDoc(collectorDocRef);
+
+                if (collectorDocSnap.exists()) {
+                  collectorName = collectorDocSnap.data().name || "Unknown";
+                }
+              }
+              
+              let customerName = "Unknown";
+              let BusinessName = "Unknown";
+              if (payment.userId) {
+                const collectorDocRef = doc(firestore, "customers", payment.customerId);
+                const collectorDocSnap = await getDoc(collectorDocRef);
+
+                if (collectorDocSnap.exists()) {
+                  customerName = collectorDocSnap.data().name || "Unknown";
+                  BusinessName = collectorDocSnap.data().username || "Unknown";
+                }
+              }
+
+              return {
+                id: paymentDoc.id,
+                amount: payment.amount,
+                remainingAmount: payment.remainingamount,
+                totalAmount: payment.totalamount,
+                customerName: customerName,
+                BusinessName: BusinessName,
+                collectorName,
+                paymentDatefilter: formatFirestoreDatefilter(payment.paymentDate),
+                paymentDate: formatFirestoreDatefilter(payment.paymentDate)
+              };
+            })
+          );
+
+          setPayments(paymentsData);
+          
+          // Calculate totals
+          const total = paymentsData.reduce((sum, payment) => sum + payment.totalAmount, 0);
+          const bal = paymentsData.reduce((sum, payment) => sum + payment.remainingAmount, 0);
+          const coll = paymentsData.reduce((sum, payment) => sum + payment.amount, 0);
+          
+          setTotalAmount(total);
+          setBalance(bal);
+          setCollected(coll);
+        });
+
+        return () => unsubscribe();
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -406,19 +217,8 @@ const Dashboard = () => {
         <header className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl md:text-4xl font-bold text-[#8A56E8]">Dashboard Overview</h1>
-            <div className="flex items-center space-x-4">
-              {/* <button className="p-2 rounded-full hover:bg-gray-100">
-                <FiHome className="h-5 w-5 text-gray-600" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <FiPackage className="h-5 w-5 text-gray-600" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <FiMenu className="h-5 w-5 text-gray-600" />
-              </button> */}
-               
-              <button     onClick={handleLogout}
-              className="p-2 rounded-full hover:bg-gray-100">
+            <div className="flex items-center space-x-4">             
+              <button onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-100">
                 <FiLogOut className="h-5 w-5 text-gray-600" />
               </button>
             </div>
@@ -427,7 +227,7 @@ const Dashboard = () => {
         </header>
 
         {/* Totals Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
             <div className="flex items-center mb-4">
               <div className="p-3 bg-blue-100 rounded-lg mr-4">
@@ -458,6 +258,61 @@ const Dashboard = () => {
               <div className="flex items-baseline">
                 <p className="text-3xl font-bold text-red-600">{totalCollectors}</p>
                 <p className="ml-2 text-sm text-gray-500">active collectors</p>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Stats Cards */}
+        
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+         
+
+          {/* Payment Stats Cards */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-green-100 rounded-lg mr-4">
+                <FiDollarSign className="h-6 w-6 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Total Amount</h2>
+            </div>
+            {isLoading ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <div className="flex items-baseline">
+                <p className="text-3xl font-bold text-green-600">PKR {totalAmount.toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-purple-100 rounded-lg mr-4">
+                <FiDollarSign className="h-6 w-6 text-purple-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Collected</h2>
+            </div>
+            {isLoading ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <div className="flex items-baseline">
+                <p className="text-3xl font-bold text-purple-600">PKR {collected.toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-lg">
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-yellow-100 rounded-lg mr-4">
+                <FiDollarSign className="h-6 w-6 text-yellow-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Balance</h2>
+            </div>
+            {isLoading ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <div className="flex items-baseline">
+                <p className="text-3xl font-bold text-yellow-600">PKR {balance.toLocaleString()}</p>
               </div>
             )}
           </div>
@@ -557,4 +412,3 @@ const Dashboard = () => {
 }
 
 export default withAuth(Dashboard)
-

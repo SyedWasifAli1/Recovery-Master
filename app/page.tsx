@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../app/lib/firebase-config";
 import Image from "next/image";
 
@@ -10,16 +10,18 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        router.push("/dashboard"); // اگر یوزر لاگ ان ہے تو ڈیش بورڈ پر ری ڈائریکٹ کرو
+        router.push("/dashboard");
       } else if (pathname !== "/") {
-        router.push("/"); // اگر یوزر لاگ ان نہیں اور کسی اور پیج پر ہے تو سائن ان پر ری ڈائریکٹ کرو
+        router.push("/");
       }
     });
 
@@ -29,6 +31,7 @@ export default function SignIn() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -38,6 +41,28 @@ export default function SignIn() {
     } catch (err) {
       setError("Failed to sign in. Please check your credentials.");
       console.error("Sign-in error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first");
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccess(`Password reset email sent to ${email}. Please check your inbox.`);
+      setShowForgotPassword(false);
+    } catch (err) {
+      setError("Failed to send reset email. Please check the email address.");
+      console.error("Password reset error:", err);
     } finally {
       setLoading(false);
     }
@@ -61,39 +86,82 @@ export default function SignIn() {
         </div>
         <h1 className="text-xl font-bold mb-4 text-center">Sign In</h1>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <div className="mb-4">
-          <label className="block text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-700"
-        >
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
+        {success && <p className="text-green-500 text-sm mb-4">{success}</p>}
+        
+        {!showForgotPassword ? (
+          <>
+            <div className="mb-4">
+              <label className="block text-gray-700">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4 text-right">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-purple-500 hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-700 disabled:bg-purple-300"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="block text-gray-700">Enter your email to reset password</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="flex justify-between">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="text-sm text-gray-500 hover:underline"
+              >
+                Back to sign in
+              </button>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-700 disabled:bg-purple-300"
+              >
+                {loading ? "Sending..." : "Send Reset Link"}
+              </button>
+            </div>
+          </>
+        )}
       </form>
     </div>
   );
 }
-
-
 // "use client";
 // // pages/index.tsx
 // import { useState, useEffect } from "react";
