@@ -76,6 +76,11 @@ function Customers() {
   const handleSave = async (updatedCustomer: Customer) => {
     try {
       const customerRef = doc(firestore, "customers", updatedCustomer.customerId);
+      
+      // Ensure device is converted to number
+      const deviceValue = Number(updatedCustomer.device) || 0;
+      const discountValue = Number(updatedCustomer.discount) || 0;
+      const finalPriceValue = Number(updatedCustomer.finalPrice) || 0;
   
       // Extract all fields you want to update
       const updateData = {
@@ -86,11 +91,11 @@ function Customers() {
         area: updatedCustomer.area,
         category: updatedCustomer.category,
         city: updatedCustomer.city,
-        device: updatedCustomer.device,
-        discount: updatedCustomer.discount,
-        finalPrice: updatedCustomer.finalPrice,
-        selectedCollector: updatedCustomer.selectedCollector, // 🛠️ New
-        // collectorName: updatedCustomer.collectorName,         // 🛠️ New
+        device: deviceValue, // Now guaranteed to be a number
+        discount: discountValue,
+        finalPrice: finalPriceValue,
+        selectedCollector: updatedCustomer.selectedCollector,
+        // collectorName: updatedCustomer.collectorName, // Optional: remove if not needed
       };
   
       await updateDoc(customerRef, updateData);
@@ -98,7 +103,12 @@ function Customers() {
       // Update the local state
       setCustomers((prev) =>
         prev.map((customer) =>
-          customer.customerId === updatedCustomer.customerId ? updatedCustomer : customer
+          customer.customerId === updatedCustomer.customerId ? {
+            ...updatedCustomer,
+            device: deviceValue, // Ensure local state also has number type
+            discount: discountValue,
+            finalPrice: finalPriceValue
+          } : customer
         )
       );
   
@@ -106,6 +116,7 @@ function Customers() {
       alert("Customer updated successfully.");
     } catch (error) {
       console.error("Error updating customer:", error);
+      alert("Failed to update customer. Please try again.");
     }
   };
   

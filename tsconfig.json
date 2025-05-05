@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/dashboard/fetchCustomers/fetchCustomers.tss", "app/dashboard/add_customer/page.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/dashboard/fetchCustomers/fetchCustomers.tss", "app/dashboard/add_customer/page.jsx", "app/dashboard/authuser/page.jsx"],
   "exclude": ["node_modules"]
 }
