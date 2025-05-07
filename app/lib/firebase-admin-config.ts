@@ -1,18 +1,15 @@
 import admin from "firebase-admin";
-import path from "path";
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_KEY || "{}");
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(
-        
-      path.resolve(process.cwd(), "config/authwithfirebase-20a41-firebase-adminsdk-2s6ag-5c95b2c3fd.json") as admin.ServiceAccount
-    //   path.resolve(process.cwd(), "config/service-account-key.json") as admin.ServiceAccount
-    ),
-    databaseURL: "https://authwithfirebase-20a41-default-rtdb.firebaseio.com",
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 
-export default admin;
+export const authAdmin = admin.auth();
+
 
 
 

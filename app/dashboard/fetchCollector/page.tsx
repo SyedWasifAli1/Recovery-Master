@@ -18,6 +18,7 @@ import { FiDownload, FiEdit, FiTrash } from "react-icons/fi";
 
 interface Collector {
   collectorId: number;
+  authId: string;
   name: string;
   email: string;
   password: string;
@@ -63,6 +64,7 @@ const CollectorsListPage = () => {
           const data = doc.data();
           return {
             collectorId: generateNumericHash(doc.id),
+            authId: doc.id,
             name: data.name || "N/A",
             email: data.email || "N/A",
             password: data.password || "N/A",
@@ -90,13 +92,44 @@ const CollectorsListPage = () => {
     return parseInt(hash.substring(0, 10), 16) % 1000000;
   };
 
+  // const handleDelete = async (collectorId: number,authId :string) => {
+  //   try {
+  //     const collectorToDelete = collectors.find(
+  //       (c) => c.collectorId === collectorId
+  //     );
+  //     if (collectorToDelete) {
+  //       await deleteDoc(doc(firestore, "collectors", collectorToDelete.uid));
+  //       setCollectors(
+  //         collectors.filter((c) => c.collectorId !== collectorId)
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting collector:", error);
+  //   }
+  // };
   const handleDelete = async (collectorId: number) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this collector?");
+    if (!confirmDelete) return;
+  
     try {
       const collectorToDelete = collectors.find(
         (c) => c.collectorId === collectorId
       );
+  
       if (collectorToDelete) {
+        // 1. Firestore se delete karo
         await deleteDoc(doc(firestore, "collectors", collectorToDelete.uid));
+  
+        // 2. Custom API se user delete karo
+        const res = await fetch(`http://localhost:3000/api/users/${collectorToDelete.uid}`, {
+          method: "DELETE",
+        });
+  
+        if (!res.ok) {
+          throw new Error("Failed to delete user from backend API");
+        }
+  
+        // 3. UI se remove karo
         setCollectors(
           collectors.filter((c) => c.collectorId !== collectorId)
         );
@@ -105,7 +138,8 @@ const CollectorsListPage = () => {
       console.error("Error deleting collector:", error);
     }
   };
-
+  
+  
   const handleEdit = (collector: Collector) => {
     setEditingCollector(collector);
   };

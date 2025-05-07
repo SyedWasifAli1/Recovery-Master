@@ -1,116 +1,51 @@
-"use client";
-// pages/user-profile.jsx
-import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../../lib/firebase-config';
+'use client';
 
-export default function UserProfile() {
-  const [user, setUser] = useState(null);
+import { useEffect, useState } from 'react';
+
+export default function AllUsersPage() {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
-  // Check auth state
+  const fetchUsers = async () => {
+    setLoading(true);
+    const res = await fetch('http://localhost:3000/api/users');
+    const data = await res.json();
+    setUsers(data);
+    setLoading(false);
+  };
+
+  const deleteUser = async (uid) => {
+    const res = await fetch(`http://localhost:3000/api/users/${uid}`, { method: 'DELETE' });
+    if (res.ok) {
+      setUsers(prev => prev.filter(user => user.uid !== uid));
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName || 'No name',
-          photoURL: firebaseUser.photoURL
-        });
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    fetchUsers();
   }, []);
 
-  // Handle login
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  if (loading) return <div>Loading...</div>;
-
-  if (!user) {
-    return (
-      <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <button 
-            type="submit" 
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-          >
-            Login
-          </button>
-        </form>
-      </div>
-    );
-  }
+  if (loading) return <p className="p-4">Loading users...</p>;
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4">User Profile</h1>
-      <div className="space-y-2">
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Name:</strong> {user.displayName}</p>
-        {user.photoURL && (
-          <img 
-            src={user.photoURL} 
-            alt="Profile" 
-            className="w-24 h-24 rounded-full object-cover" 
-          />
-        )}
-        <p><strong>UID:</strong> {user.uid}</p>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">All Firebase Users</h1>
+      <div className="space-y-4">
+        {users.map((user) => (
+          <div key={user.uid} className="p-4 border rounded-md flex items-center justify-between">
+            <div>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Name:</strong> {user.displayName}</p>
+            </div>
+            <button
+              onClick={() => deleteUser(user.uid)}
+              className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
       </div>
-      
-      <button 
-        onClick={handleLogout}
-        className="mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
-      >
-        Logout
-      </button>
     </div>
   );
 }
