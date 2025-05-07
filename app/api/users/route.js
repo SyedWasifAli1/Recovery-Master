@@ -6,7 +6,7 @@ export async function GET() {
     const users = listUsers.users.map(user => ({
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName || 'No Name',
+      displayName: user.displayName || 'No user Name',
       photoURL: user.photoURL || null,
     }));
 
