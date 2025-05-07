@@ -121,7 +121,7 @@ const CollectorsListPage = () => {
         await deleteDoc(doc(firestore, "collectors", collectorToDelete.uid));
   
         // 2. Custom API se user delete karo
-        const res = await fetch(`http://localhost:3000/api/users/${collectorToDelete.uid}`, {
+        const res = await fetch(`https://recovery-master-six.vercel.app/api/users/${collectorToDelete.uid}`, {
           method: "DELETE",
         });
   
