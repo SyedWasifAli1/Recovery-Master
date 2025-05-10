@@ -34,6 +34,13 @@ export default function SignIn() {
     setSuccess("");
     setLoading(true);
 
+    // Check if email is the allowed one
+    if (email !== "ssf291112@gmail.com") {
+      setError("Only authorized email can sign in");
+      setLoading(false);
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Sign-in successful!");
@@ -52,6 +59,12 @@ export default function SignIn() {
       return;
     }
 
+    // Check if email is the allowed one
+    if (email !== "ssf291112@gmail.com") {
+      setError("Password reset is only available for authorized email");
+      return;
+    }
+
     setError("");
     setSuccess("");
     setLoading(true);
@@ -61,7 +74,7 @@ export default function SignIn() {
       setSuccess(`Password reset email sent to ${email}. Please check your inbox.`);
       setShowForgotPassword(false);
     } catch (err) {
-      setError("Failed to send reset email. Please check the email address.");
+      setError("Failed to send reset email. Please try again later.");
       console.error("Password reset error:", err);
     } finally {
       setLoading(false);
@@ -115,6 +128,7 @@ export default function SignIn() {
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
                 className="text-sm text-purple-500 hover:underline"
+                disabled={email !== "ssf291112@gmail.com"}
               >
                 Forgot password?
               </button>
@@ -150,7 +164,7 @@ export default function SignIn() {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                disabled={loading}
+                disabled={loading || email !== "ssf291112@gmail.com"}
                 className="bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-700 disabled:bg-purple-300"
               >
                 {loading ? "Sending..." : "Send Reset Link"}
