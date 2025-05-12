@@ -10,8 +10,20 @@ export async function GET() {
       photoURL: user.photoURL || null,
     }));
 
-    return new Response(JSON.stringify(users), { status: 200 });
+    return new Response(JSON.stringify(users), {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    });
   }
 }
