@@ -54,12 +54,12 @@ import {
 import { getFirestore} from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDNnJlrCfZqpsJMdyc4QMvRCRaReVusrIc",
-  authDomain: "londoncomputers-9aedc.firebaseapp.com",
-  projectId: "londoncomputers-9aedc",
-  storageBucket: "londoncomputers-9aedc.firebasestorage.app",
-  messagingSenderId: "50579533609",
-  appId: "1:50579533609:web:4eb19338a02c0d5150d138"
+    apiKey: "AIzaSyBovfy1NcNkPmassTgjl3XHqR2Fl6kAOCQ",
+  authDomain: "recovery-master-316a9.firebaseapp.com",
+  projectId: "recovery-master-316a9",
+  storageBucket: "recovery-master-316a9.firebasestorage.app",
+  messagingSenderId: "89070756912",
+  appId: "1:89070756912:web:95c896c9d57e809093b9f5",
 };
 
 // Initialize Firebase
